@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>莎翁奇妙物语 - 互动游戏</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&family=Noto+Serif+SC:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0c0a18;--bg2:#16122e;--accent:#f0d68a;--accent2:#e8a87c;--accent3:#c76b5a;--text:#f5ede0;--text2:#a89882;--card:#1c1838;--card-hover:#282348;--shadow:rgba(0,0,0,.6);--gold:#d4a843;--pink:#f7b5c8;--sky:#a8d8ea;--green:#7db87d}
+body{font-family:'ZCOOL KuaiLe','Noto Serif SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+#starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+header{position:relative;z-index:10;text-align:center;padding:16px 16px 4px;background:linear-gradient(180deg,rgba(12,10,24,.96),transparent)}
+header h1{font-family:'Ma Shan Zheng',cursive;font-size:2.6em;background:linear-gradient(135deg,#f0d68a,#e8a87c,#f0d68a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:4px}
+header .sub{font-size:.78em;color:var(--text2);margin-top:0;letter-spacing:2px}
+
+.tabs{display:flex;justify-content:center;gap:2px;margin:4px 0 8px;position:relative;z-index:10;flex-wrap:wrap}
+.tab-btn{padding:6px 14px;border:1px solid transparent;background:transparent;color:var(--text2);border-radius:12px 12px 0 0;cursor:pointer;font-family:inherit;font-size:.76em;transition:all .3s;border-bottom:2px solid transparent}
+.tab-btn:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(240,214,138,.04)}
+
+.game-container{position:relative;z-index:10;max-width:920px;margin:0 auto;padding:0 12px 40px}
+.tab-content{display:none}.tab-content.active{display:block}
+
+.stats-bar{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:2px 0 8px}
+.stat{display:flex;align-items:center;gap:3px;background:var(--card);padding:3px 10px;border-radius:16px;border:1px solid rgba(255,255,255,.04);font-size:.72em;transition:all .3s}
+.stat .v{color:var(--accent);font-weight:bold;min-width:12px;text-align:center;transition:all .3s}
+.stat.pop .v{color:#fff;text-shadow:0 0 10px var(--accent)}
+
+.s-dots{display:flex;justify-content:center;gap:4px;margin:3px 0 6px}
+.s-dot{width:32px;height:3px;border-radius:2px;background:rgba(255,255,255,.05);transition:all .4s;cursor:pointer}
+.s-dot.active{background:var(--accent);box-shadow:0 0 8px rgba(240,214,138,.25)}
+.s-dot.past{background:rgba(240,214,138,.15)}
+
+/* ---- SD Character ---- */
+.char-main{display:flex;align-items:center;justify-content:center;gap:20px;margin:2px 0 10px;flex-wrap:wrap}
+.char-portrait{position:relative;width:200px;height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+#char-canvas{width:190px;height:220px;filter:drop-shadow(0 0 20px rgba(240,214,138,.06));transition:filter .3s}
+#char-canvas:hover{filter:drop-shadow(0 0 30px rgba(240,214,138,.12))}
+.char-name-tag{font-size:.72em;color:var(--accent2);margin-top:1px;background:rgba(0,0,0,.35);padding:1px 12px;border-radius:8px;border:1px solid rgba(232,168,124,.1)}
+
+.speech-area{flex:1;min-width:220px;max-width:430px}
+.speech-bubble{background:var(--card);border-radius:14px;padding:12px 16px;border:1px solid rgba(240,214,138,.07);box-shadow:0 4px 20px var(--shadow);min-height:76px;transition:all .4s;position:relative}
+.speech-bubble::before{content:'';position:absolute;left:-9px;top:30px;width:18px;height:18px;background:var(--card);border-left:1px solid rgba(240,214,138,.07);border-bottom:1px solid rgba(240,214,138,.07);transform:rotate(45deg)}
+.speech-bubble .spk{font-size:.7em;color:var(--accent2);margin-bottom:2px}
+.speech-bubble .sp-txt{font-size:.85em;line-height:1.6;color:var(--text)}
+.speech-bubble .sp-txt em{color:var(--gold);font-style:normal}
+
+.narr-box{background:rgba(28,24,56,.4);border-radius:12px;padding:10px 14px;margin:0 0 8px;border:1px solid rgba(255,255,255,.02);line-height:1.7;font-size:.8em;color:var(--text2);transition:all .4s}
+.narr-box .hl{color:var(--accent)}
+
+.choices-area{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+.choice-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--card);border:1px solid rgba(240,214,138,.07);border-radius:10px;cursor:pointer;transition:all .3s;font-family:inherit;color:var(--text);text-align:left;font-size:.82em;position:relative;overflow:hidden}
+.choice-btn::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent2);transform:scaleY(0);transition:transform .3s;border-radius:0 2px 2px 0}
+.choice-btn:hover{background:var(--card-hover);border-color:rgba(240,214,138,.12);transform:translateX(2px)}
+.choice-btn:hover::before{transform:scaleY(1)}
+.choice-btn .ci{font-size:1.1em;flex-shrink:0}
+.choice-btn .ce{font-size:.6em;color:var(--text2);flex-shrink:0;opacity:0;transition:opacity .3s}
+.choice-btn:hover .ce{opacity:1}
+.choice-btn .eg{color:var(--accent)}
+.choice-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+
+.tl-mini{background:var(--card);border-radius:12px;padding:10px 14px;margin:12px 0 0;border:1px solid rgba(255,255,255,.02)}
+.tl-mini h4{font-family:'Ma Shan Zheng',cursive;color:var(--accent);font-size:1em;text-align:center;margin-bottom:6px}
+.tl{position:relative;padding:2px 0}
+.tl::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:2px}
+.tl-i{position:relative;padding:4px 0 4px 42px;cursor:pointer;transition:all .3s;opacity:.35}
+.tl-i.unlocked{opacity:1}
+.tl-i.current{opacity:1}
+.tl-i:hover{background:rgba(255,255,255,.02);border-radius:6px}
+.tl-i .tld{position:absolute;left:11px;top:8px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.05);transition:all .3s}
+.tl-i.unlocked .tld{background:var(--accent2);border-color:var(--accent2)}
+.tl-i.current .tld{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px rgba(240,214,138,.25)}
+.tl-i .tly{font-size:.66em;color:var(--text2)}
+.tl-i .tlt{font-size:.76em;color:var(--text)}
+
+/* ============================================================
+   SHAKESPEARE WORLD - Character Collection
+   ============================================================ */
+.world-header{text-align:center;padding:8px 0;font-size:.8em;color:var(--text2)}
+.world-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:8px 0}
+.world-card{background:var(--card);border-radius:14px;padding:14px;cursor:pointer;border:1px solid rgba(255,255,255,.04);transition:all .3s;text-align:center}
+.world-card:hover{background:var(--card-hover);border-color:rgba(240,214,138,.1);transform:translateY(-3px);box-shadow:0 6px 20px var(--shadow)}
+.world-card.locked{opacity:.35;filter:grayscale(.6)}
+.world-card.locked:hover{opacity:.5;transform:translateY(-2px)}
+.world-card .w-avatar{font-size:2.8em;margin-bottom:4px;display:block}
+.world-card .w-name{font-size:.8em;color:var(--text);margin-bottom:2px}
+.world-card .w-title{font-size:.62em;color:var(--text2)}
+.world-card .w-rel{font-size:.6em;margin-top:4px;padding:2px 8px;border-radius:8px;display:inline-block}
+.w-rel.family{background:rgba(247,181,200,.12);color:var(--pink);border:1px solid rgba(247,181,200,.12)}
+.w-rel.friend{background:rgba(168,216,234,.12);color:var(--sky);border:1px solid rgba(168,216,234,.12)}
+.w-rel.rival{background:rgba(199,107,90,.12);color:var(--accent3);border:1px solid rgba(199,107,90,.12)}
+.w-rel.patron{background:rgba(240,214,138,.12);color:var(--accent);border:1px solid rgba(240,214,138,.12)}
+.w-rel.mystery{background:rgba(212,168,67,.12);color:var(--gold);border:1px solid rgba(212,168,67,.12)}
+
+.world-card .w-dialog{font-size:.68em;color:var(--text2);margin-top:6px;font-style:italic;display:none;line-height:1.4}
+.world-card.expanded .w-dialog{display:block}
+.world-card .w-bio{font-size:.6em;color:var(--text2);margin-top:4px;display:none;line-height:1.4}
+.world-card.expanded .w-bio{display:block}
+
+/* ============================================================
+   MINI GAMES
+   ============================================================ */
+.mg-hub{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin:8px 0}
+.mg-card{background:var(--card);border-radius:14px;padding:16px;cursor:pointer;border:1px solid rgba(240,214,138,.05);transition:all .3s;text-align:center}
+.mg-card:hover{background:var(--card-hover);border-color:rgba(240,214,138,.12);transform:translateY(-3px);box-shadow:0 6px 20px var(--shadow)}
+.mg-card .mg-icon{font-size:2.4em;margin-bottom:4px}
+.mg-card .mg-title{font-size:.9em;color:var(--accent);margin-bottom:3px}
+.mg-card .mg-desc{font-size:.7em;color:var(--text2)}
+.mg-back{display:inline-block;padding:4px 14px;background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:12px;cursor:pointer;font-family:inherit;font-size:.72em;transition:all .3s;margin-bottom:6px}
+.mg-back:hover{background:rgba(240,214,138,.08)}
+
+.hc-scene{background:var(--card);border-radius:12px;padding:12px 14px;margin:6px 0;border:1px solid rgba(255,255,255,.02)}
+.hc-scene .hc-title{font-size:.82em;color:var(--accent2);margin-bottom:3px}
+.hc-scene .hc-text{font-size:.78em;line-height:1.6;color:var(--text2)}
+.hc-choice{padding:8px 12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:all .3s;font-family:inherit;color:var(--text);text-align:left;font-size:.78em;margin:3px 0;display:block;width:100%}
+.hc-choice:hover{background:rgba(240,214,138,.06);border-color:var(--accent)}
+.hc-choice:disabled{cursor:not-allowed;opacity:.5}
+.hc-choice.picked{background:rgba(240,214,138,.1);border-color:var(--accent)}
+.hc-result{margin:6px 0;padding:8px 12px;border-radius:8px;font-size:.76em;display:none;line-height:1.5}
+.hc-result.show{display:block}
+.hc-result.good{background:rgba(76,175,80,.06);border:1px solid rgba(76,175,80,.15);color:#81c784}
+.hc-result.bad{background:rgba(199,107,90,.06);border:1px solid rgba(199,107,90,.15);color:#c76b5a}
+.hc-result.neutral{background:rgba(240,214,138,.06);border:1px solid rgba(240,214,138,.1);color:var(--accent)}
+
+.mm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:340px;margin:8px auto}
+.mm-card{aspect-ratio:1;background:var(--card);border:1px solid rgba(240,214,138,.08);border-radius:8px;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;font-size:1.8em}
+.mm-card:hover{transform:scale(1.03)}
+.mm-card.flipped{background:rgba(240,214,138,.08);border-color:var(--accent)}
+.mm-card.matched{background:rgba(76,175,80,.08);border-color:#4caf50;cursor:default;opacity:.6;transform:none!important}
+.mm-score{text-align:center;font-size:.78em;color:var(--text2);margin-top:6px}
+
+.qb-area{margin:6px 0;text-align:center}
+.qb-hint{font-size:.82em;color:var(--accent2);margin-bottom:6px}
+.qb-source{font-size:.68em;color:var(--text2);margin-top:4px}
+.qb-words{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:6px 0;min-height:30px}
+.qb-word{padding:5px 10px;background:var(--card);border:1px solid rgba(240,214,138,.08);border-radius:6px;cursor:pointer;font-family:inherit;color:var(--text);font-size:.74em;transition:all .2s;user-select:none}
+.qb-word:hover{background:var(--card-hover);border-color:var(--accent)}
+.qb-word.placed{background:rgba(240,214,138,.08);border-color:var(--accent);opacity:.4;cursor:default}
+.qb-slots{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-height:30px;padding:8px;background:rgba(255,255,255,.02);border-radius:8px;border:1px dashed rgba(240,214,138,.12);margin:6px 0}
+.qb-slot{padding:5px 10px;background:rgba(240,214,138,.03);border:1px dashed rgba(240,214,138,.15);border-radius:6px;min-width:40px;min-height:26px;display:flex;align-items:center;justify-content:center;font-size:.74em;color:var(--text2);transition:all .2s}
+.qb-slot.filled{border-style:solid;border-color:var(--accent);color:var(--text)}
+.qb-slot.correct{border-color:#4caf50;background:rgba(76,175,80,.06);color:#81c784}
+.qb-btn{margin-top:6px;padding:6px 16px;background:var(--accent);color:#0c0a18;border:none;border-radius:12px;cursor:pointer;font-family:inherit;font-size:.76em;font-weight:bold;transition:all .3s}
+.qb-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(240,214,138,.2)}
+.qb-btn:disabled{opacity:.3;cursor:not-allowed;transform:none!important}
+
+/* ---- New Games ---- */
+.sn-line{font-size:.9em;color:var(--accent);margin:6px 0;line-height:1.6;font-style:italic;text-align:center}
+.sn-src{font-size:.66em;color:var(--text2);margin-bottom:6px;text-align:center}
+.wi-word{font-size:1.3em;color:var(--accent2);font-weight:bold;margin:8px 0;text-align:center;letter-spacing:2px}
+.qsp-quote{font-size:.88em;color:var(--gold);margin:8px 0;line-height:1.5;text-align:center;font-style:italic}
+.mg-score-bar{font-size:.72em;color:var(--text2);text-align:center;margin-top:8px;padding:6px;background:rgba(255,255,255,.02);border-radius:8px}
+.qsp-progress{display:flex;justify-content:center;gap:3px;margin:6px 0}
+.qsp-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.05);transition:all .3s}
+.qsp-dot.done{background:rgba(76,175,80,.4)}
+.qsp-dot.wrong{background:rgba(199,107,90,.4)}
+.qsp-dot.current{background:var(--accent);box-shadow:0 0 6px rgba(240,214,138,.3)}
+
+/* ---- Work Detail + Travel ---- */
+.work-detail{padding:4px 0}
+.wd-title{font-size:1.15em;color:var(--accent);font-family:'Ma Shan Zheng',cursive;margin:4px 0}
+.wd-en{font-size:.65em;color:var(--text2);font-weight:normal}
+.wd-chars{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
+.wd-char{font-size:.68em;padding:2px 8px;background:var(--card);border-radius:10px;border:1px solid rgba(255,255,255,.04)}
+.wd-intro{font-size:.76em;color:var(--text);line-height:1.7;margin:4px 0 10px;padding:8px 10px;background:rgba(255,255,255,.02);border-radius:8px;border-left:3px solid var(--accent2)}
+.wd-quote{font-style:italic;font-size:.78em;color:var(--gold);padding:8px 10px;margin:6px 0 10px;background:rgba(240,214,138,.04);border-radius:8px;border:1px solid rgba(240,214,138,.06);line-height:1.5}
+.wd-qx{display:block;font-style:normal;font-size:.7em;color:var(--text2);margin-top:5px}
+.wd-travel{display:block;width:100%;padding:10px;background:linear-gradient(135deg,var(--accent2),var(--accent3));color:#fff;border:none;border-radius:12px;cursor:pointer;font-family:inherit;font-size:.82em;font-weight:bold;transition:all .3s;text-align:center}
+.wd-travel:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(199,107,90,.3)}
+.w-enter{font-size:.6em;color:var(--accent2);margin-top:4px;opacity:0;transition:opacity .3s;text-align:right}
+.w-card:hover .w-enter{opacity:1}
+
+.travel-scene{background:var(--card);border-radius:14px;padding:14px;border:1px solid rgba(240,214,138,.08);margin:6px 0}
+.ts-bg{font-size:.7em;color:var(--accent2);margin-bottom:2px}
+.ts-npc{font-size:.85em;color:var(--gold);margin:4px 0}
+.ts-line{font-style:italic;color:var(--text2);font-size:.76em;margin-bottom:8px;padding-left:8px;border-left:2px solid var(--accent)}
+.ts-divider{height:1px;background:rgba(255,255,255,.04);margin:8px 0}
+.ts-scene{font-size:.8em;color:var(--text);line-height:1.6;margin:4px 0 10px}
+.ts-choices{display:flex;flex-direction:column;gap:4px}
+.ts-choice{padding:8px 12px;background:rgba(255,255,255,.02);border:1px solid rgba(240,214,138,.08);border-radius:8px;cursor:pointer;font-family:inherit;color:var(--text);text-align:left;font-size:.74em;transition:all .3s}
+.quiz-btn{padding:6px 20px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:16px;cursor:pointer;font-family:inherit;font-size:.78em;transition:all .3s}
+.quiz-btn:hover{background:rgba(240,214,138,.06);transform:scale(1.05)}
+.quiz-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.ts-choice:hover{background:rgba(240,214,138,.06);border-color:var(--accent);transform:translateX(2px)}
+.ts-choice:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+.find-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.find-item{aspect-ratio:1;background:var(--card);border:2px solid rgba(255,255,255,.04);border-radius:10px;cursor:pointer;transition:all .3s;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:2em;gap:3px}
+.find-item:hover{border-color:var(--accent);transform:scale(1.04)}
+.find-item span{font-size:.28em;color:var(--text2);text-align:center;line-height:1.2;max-width:90%}
+.find-item.found{cursor:default;transform:none!important}
+.ts-tip{font-size:.64em;color:var(--text2);font-style:italic;text-align:center;margin:4px 0 8px}
+
+.order-area{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+.order-item{padding:8px 12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:8px;cursor:pointer;font-family:inherit;color:var(--text);text-align:left;font-size:.72em;transition:all .3s}
+.order-item:hover{border-color:var(--accent);transform:translateX(2px)}
+.order-item.placed{cursor:default;opacity:.85;font-weight:bold}
+.order-tip{font-size:.64em;color:var(--text2);font-style:italic;text-align:center;margin-bottom:4px}
+
+@media(max-width:700px){
+  .find-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ---- Works ---- */
+.works-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:6px 0}
+.works-scroll::-webkit-scrollbar{height:3px}
+.works-scroll::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px}
+.w-card{min-width:150px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:10px;cursor:pointer;transition:all .3s;flex-shrink:0}
+.w-card:hover{background:var(--card-hover);border-color:rgba(240,214,138,.1);transform:translateY(-2px)}
+.w-card .wb{font-size:.55em;padding:1px 6px;border-radius:5px;display:inline-block}
+.wb.tragedy{background:rgba(199,107,90,.12);color:var(--accent3);border:1px solid rgba(199,107,90,.1)}
+.wb.comedy{background:rgba(232,168,124,.12);color:var(--accent2);border:1px solid rgba(232,168,124,.1)}
+.wb.history{background:rgba(240,214,138,.08);color:var(--accent);border:1px solid rgba(240,214,138,.08)}
+.w-card .wt{font-size:.82em;color:var(--text);margin:2px 0 0}
+.w-card .we{font-size:.6em;color:var(--text2);font-style:italic}
+.w-card .wy{font-size:.62em;color:var(--text2)}
+.w-card .wd{font-size:.68em;color:var(--text2);line-height:1.35;margin-top:5px;display:none}
+.w-card.expanded .wd{display:block}
+
+/* Works mini-quiz */
+.w-quiz{background:var(--card);border-radius:12px;padding:12px 14px;margin:6px 0;border:1px solid rgba(255,255,255,.02)}
+.w-quiz .wq-title{font-size:.8em;color:var(--accent);margin-bottom:6px}
+.w-quiz .wq-q{font-size:.76em;color:var(--text);margin-bottom:8px;line-height:1.5}
+.w-quiz .wq-opts{display:flex;flex-direction:column;gap:4px}
+.w-quiz .wq-opt{padding:6px 10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:6px;cursor:pointer;transition:all .3s;font-family:inherit;color:var(--text);text-align:left;font-size:.72em}
+.w-quiz .wq-opt:hover{background:rgba(240,214,138,.05);border-color:var(--accent)}
+.w-quiz .wq-opt:disabled{cursor:not-allowed;opacity:.5}
+.w-quiz .wq-opt.correct{background:rgba(76,175,80,.08);border-color:#4caf50;color:#81c784}
+.w-quiz .wq-opt.wrong{background:rgba(199,107,90,.08);border-color:#c76b5a;color:#c76b5a}
+.w-quiz .wq-fb{font-size:.7em;color:var(--text2);margin-top:6px;display:none;line-height:1.4}
+.w-quiz .wq-fb.show{display:block}
+
+/* ---- Quotes ---- */
+.q-carousel{background:var(--card);border-radius:14px;padding:16px;text-align:center;border:1px solid rgba(255,255,255,.02);min-height:80px}
+.q-carousel .qt{font-style:italic;font-size:.92em;line-height:1.6;color:var(--gold)}
+.q-carousel .qs{font-size:.7em;color:var(--text2);margin-top:4px}
+.q-nav{display:flex;justify-content:center;gap:8px;margin-top:10px}
+.q-nav button{padding:4px 12px;background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:10px;cursor:pointer;font-family:inherit;font-size:.7em;transition:all .3s}
+.q-nav button:hover{background:rgba(240,214,138,.06)}
+
+/* ---- Achievement ---- */
+.ach-toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:2px solid var(--accent);border-radius:12px;padding:10px 16px;box-shadow:0 6px 24px var(--shadow);z-index:100;transform:translateX(120%);transition:transform .5s cubic-bezier(.175,.885,.32,1.275);max-width:240px}
+.ach-toast.show{transform:translateX(0)}
+.ach-toast .ai{font-size:1.4em}
+.ach-toast .at{font-size:.8em;color:var(--accent);font-weight:bold}
+.ach-toast .ad{font-size:.68em;color:var(--text2)}
+
+.restart-btn{position:fixed;top:10px;right:12px;z-index:50;background:var(--card);border:1px solid rgba(240,214,138,.08);color:var(--text2);padding:4px 10px;border-radius:14px;cursor:pointer;font-family:inherit;font-size:.64em;transition:all .3s}
+.restart-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.float-p{position:fixed;pointer-events:none;z-index:1;font-size:.4em;opacity:.05;animation:floatUp linear infinite}
+@keyframes floatUp{0%{transform:translateY(100vh) rotate(0deg);opacity:0}10%{opacity:.06}90%{opacity:.06}100%{transform:translateY(-100vh) rotate(720deg);opacity:0}}
+
+/* ---- Advanced Animations ---- */
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 6px rgba(240,214,138,.12)}50%{box-shadow:0 0 18px rgba(240,214,138,.28)}}
+@keyframes borderGlow{0%,100%{border-color:rgba(240,214,138,.08)}50%{border-color:rgba(240,214,138,.22)}}
+@keyframes popIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+@keyframes rippleAnim{to{transform:scale(4);opacity:0}}
+
+/* Shimmer title */
+header h1{background-size:200% auto;animation:shimmer 6s linear infinite}
+
+/* Entrance stagger for card grids */
+.mg-card{animation:fadeUp .45s ease both}
+.mg-card:nth-child(2){animation-delay:.04s}.mg-card:nth-child(3){animation-delay:.08s}.mg-card:nth-child(4){animation-delay:.12s}.mg-card:nth-child(5){animation-delay:.16s}.mg-card:nth-child(6){animation-delay:.2s}.mg-card:nth-child(7){animation-delay:.24s}.mg-card:nth-child(8){animation-delay:.28s}.mg-card:nth-child(9){animation-delay:.32s}.mg-card:nth-child(10){animation-delay:.36s}.mg-card:nth-child(11){animation-delay:.4s}.mg-card:nth-child(12){animation-delay:.44s}.mg-card:nth-child(13){animation-delay:.48s}.mg-card:nth-child(14){animation-delay:.52s}.mg-card:nth-child(15){animation-delay:.56s}.mg-card:nth-child(16){animation-delay:.6s}
+.world-card{animation:fadeUp .45s ease both}
+.world-card:nth-child(2){animation-delay:.04s}.world-card:nth-child(3){animation-delay:.08s}.world-card:nth-child(4){animation-delay:.12s}.world-card:nth-child(5){animation-delay:.16s}.world-card:nth-child(6){animation-delay:.2s}.world-card:nth-child(7){animation-delay:.24s}.world-card:nth-child(8){animation-delay:.28s}.world-card:nth-child(9){animation-delay:.32s}.world-card:nth-child(10){animation-delay:.36s}.world-card:nth-child(11){animation-delay:.4s}.world-card:nth-child(12){animation-delay:.44s}
+.w-card{animation:fadeUp .4s ease both}
+.w-card:nth-child(2){animation-delay:.04s}.w-card:nth-child(3){animation-delay:.08s}.w-card:nth-child(4){animation-delay:.12s}.w-card:nth-child(5){animation-delay:.16s}.w-card:nth-child(6){animation-delay:.2s}.w-card:nth-child(7){animation-delay:.24s}.w-card:nth-child(8){animation-delay:.28s}.w-card:nth-child(9){animation-delay:.32s}.w-card:nth-child(10){animation-delay:.36s}.w-card:nth-child(11){animation-delay:.4s}.w-card:nth-child(12){animation-delay:.44s}.w-card:nth-child(13){animation-delay:.48s}.w-card:nth-child(14){animation-delay:.52s}
+
+/* Tab content fade-in */
+.tab-content.active{animation:fadeUp .3s ease both}
+
+/* Active glow pulse */
+.tab-btn.active{animation:glowPulse 2.5s ease-in-out infinite}
+.s-dot.active{animation:glowPulse 2s ease-in-out infinite}
+
+/* Card glow on hover */
+.w-card:hover,.world-card:hover,.mg-card:hover{animation:borderGlow 2s ease-in-out infinite}
+
+/* Ripple container */
+.choice-btn,.ts-choice,.hc-choice,.mg-card,.world-card,.w-card,.wd-travel{position:relative;overflow:hidden}
+.ripple{position:absolute;border-radius:50%;background:rgba(240,214,138,.25);transform:scale(0);animation:rippleAnim .6s ease-out;pointer-events:none}
+
+/* Achievement + stat icon pop */
+.ach-toast .ai{display:inline-block;animation:popIn .5s ease both}
+.stat.pop .v{animation:popIn .3s ease both;display:inline-block}
+
+/* Cinematic vignette overlay */
+body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,transparent 55%,rgba(12,10,24,.5) 100%)}
+
+/* Smoother speech transition */
+.speech-bubble{animation:fadeUp .35s ease both}
+
+@media(max-width:700px){
+  header h1{font-size:1.8em}
+  .char-main{flex-direction:column;gap:8px}
+  .char-portrait{width:160px;height:200px}
+  #char-canvas{width:150px;height:180px}
+  .speech-area{min-width:unset}
+  .speech-bubble::before{display:none}
+  .choice-btn .ce{display:none}
+  .world-grid{grid-template-columns:repeat(3,1fr)}
+  .s-dot{width:20px}
+  .stats-bar{gap:5px}.stat{font-size:.65em;padding:2px 7px}
+  .tab-btn{font-size:.68em;padding:4px 8px}
+  .mm-grid{max-width:240px;gap:4px}.mm-card{font-size:1.3em}
+  .mg-hub{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div id="floaties"></div>
+<button class="restart-btn" onclick="restartGame()">&#128260; 重来</button>
+
+<header>
+  <h1>&#127917; 莎翁奇妙物语</h1>
+  <div class="sub">&#127775; 书写属于你的传奇</div>
+</header>
+
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="journey">&#128214; 人生</button>
+  <button class="tab-btn" data-tab="world">&#127758; 世界</button>
+  <button class="tab-btn" data-tab="plays">&#127916; 戏中戏</button>
+  <button class="tab-btn" data-tab="works">&#128218; 作品</button>
+  <button class="tab-btn" data-tab="quotes">&#128172; 名句</button>
+</div>
+
+<div class="game-container">
+
+<div class="tab-content active" id="tab-journey">
+  <div class="stats-bar" id="statsBar">
+    <div class="stat" id="sFame"><span>&#127775;</span> 声望 <span class="v" id="vFame">0</span></div>
+    <div class="stat" id="sLove"><span>&#128153;</span> 情感 <span class="v" id="vLove">0</span></div>
+    <div class="stat" id="sWealth"><span>&#128176;</span> 财富 <span class="v" id="vWealth">0</span></div>
+    <div class="stat" id="sWisdom"><span>&#128214;</span> 智慧 <span class="v" id="vWisdom">0</span></div>
+  </div>
+  <div class="s-dots" id="sDots"></div>
+  <div class="char-main">
+    <div class="char-portrait" id="charPortrait" onclick="clickChar()">
+      <canvas id="char-canvas" width="190" height="220"></canvas>
+      <div class="char-name-tag" id="nameTag">&#127916; 威廉·莎士比亚</div>
+    </div>
+    <div class="speech-area">
+      <div class="speech-bubble">
+        <div class="spk" id="spk">&#128172; 命运之声</div>
+        <div class="sp-txt" id="spTxt">点击角色有惊喜~</div>
+      </div>
+    </div>
+  </div>
+  <div class="narr-box" id="narrBox">点击下方按钮开始旅程</div>
+  <div class="choices-area" id="choicesArea">
+    <button class="choice-btn" id="startBtn" onclick="startGame()">
+      <span class="ci">&#127917;</span><span class="choice-label">开始莎士比亚的传奇人生！</span>
+    </button>
+  </div>
+  <div class="tl-mini">
+    <h4>&#128214; 人生足迹</h4>
+    <div class="tl" id="tl"></div>
+  </div>
+</div>
+
+<!-- TAB 2: WORLD -->
+<div class="tab-content" id="tab-world">
+  <div class="world-header">&#127758; 你遇到的每一个人，都塑造了莎士比亚的人生</div>
+  <div class="world-grid" id="worldGrid"></div>
+</div>
+
+<!-- TAB 3: PLAYS -->
+<div class="tab-content" id="tab-plays">
+  <div class="mg-hub" id="mgHub"></div>
+  <div id="mgContent"><div style="text-align:center;color:var(--text2);padding:16px;font-size:.78em">点击上方卡片开始游戏！</div></div>
+</div>
+
+<!-- TAB 4: WORKS -->
+<div class="tab-content" id="tab-works">
+  <div class="w-quiz" id="wQuiz">
+    <div class="wq-title">&#129518; 猜猜是哪部剧？</div>
+    <div class="wq-q" id="wqQ">加载中...</div>
+    <div class="wq-opts" id="wqOpts"></div>
+    <div class="wq-fb" id="wqFb"></div>
+  </div>
+  <div class="works-scroll" id="worksScroll"></div>
+  <div id="workDetail" style="display:none"></div>
+  <div id="travelArea" style="display:none"></div>
+</div>
+
+<!-- TAB 5: QUOTES -->
+<div class="tab-content" id="tab-quotes">
+  <div class="q-carousel">
+    <div class="qt" id="qtText">加载中...</div>
+    <div class="qs" id="qtSource">——</div>
+    <div class="q-nav">
+      <button id="qtPrev">&#9664; 上一条</button>
+      <button id="qtNext">下一条 &#9654;</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="ach-toast" id="achToast">
+  <div class="ai" id="achIcon">&#127942;</div>
+  <div class="at" id="achTitle">成就解锁</div>
+  <div class="ad" id="achDesc">描述</div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const STAGES = [
+  {id:'baby',label:'&#127968;诞生',year:'1564'},
+  {id:'child',label:'&#128218;求学',year:'1571-79'},
+  {id:'young',label:'&#128153;青春',year:'1582-91'},
+  {id:'adult',label:'&#127916;伦敦',year:'1592-1600'},
+  {id:'mature',label:'&#127942;巅峰',year:'1605-13'},
+  {id:'legend',label:'&#128329;永恒',year:'1616-'}
+];
+
+const SCENARIOS = [
+  {stage:0,speaker:'&#127775;命运之声',
+   narrative:'<span class="hl">&#127968; 1564年4月·斯特拉特福</span><br>春日的晨光中，一个新的生命降生了。父亲约翰是皮革商人，母亲玛丽·雅顿出身名门。小镇的生活宁静而美好，但这个孩子的啼哭，终将响彻整个世界。',
+   text:'小威廉好奇地打量着这个世界。<br>你希望他拥有怎样的童年？',
+   choices:[{icon:'&#128214;',label:'沉浸在书本中',effect:'+智慧',stat:'wisdom',val:2,unlock:'mary'},{icon:'&#127775;',label:'鼓励大胆表达',effect:'+声望',stat:'fame',val:2,unlock:'john'},{icon:'&#128153;',label:'给予满满的爱',effect:'+情感',stat:'love',val:2,unlock:'anne'}]},
+  {stage:1,speaker:'&#128218;文法学校',
+   narrative:'<span class="hl">&#127891; 1571年·国王新学校</span><br>教室里弥漫着墨香，老师在用拉丁文朗读古罗马的诗篇。窗外传来小鸟的啁啾声，隔壁镇集上热闹非凡。你的心，早已飞向了远方。',
+   text:'"威廉！你又走神了！"<br>你决定怎么做？',
+   choices:[{icon:'&#128214;',label:'认真背诵拉丁文',effect:'+智慧',stat:'wisdom',val:3},{icon:'&#9998;',label:'偷偷在角落写诗',effect:'+声望',stat:'fame',val:2},{icon:'&#127908;',label:'和同学们演短剧',effect:'+情感',stat:'love',val:2}]},
+  {stage:2,speaker:'&#128153;年轻的心',
+   narrative:'<span class="hl">&#128152; 1582年·斯特拉特福郊外</span><br>26岁的安妮·海瑟薇走进了你的生活。她比你大8岁，成熟而温柔。但父亲的生意不顺，家里的经济状况在恶化，而远方的伦敦似乎在召唤着你……',
+   text:'你站在人生的十字路口。<br>爱情、家庭、梦想——你选择哪个？',
+   choices:[{icon:'&#128153;',label:'向安妮求婚',effect:'+情感',stat:'love',val:3,unlock:'hamnet'},{icon:'&#128176;',label:'学做生意帮家计',effect:'+财富',stat:'wealth',val:2},{icon:'&#128640;',label:'收拾行囊去伦敦',effect:'+声望',stat:'fame',val:2,unlock:'marlowe'}]},
+  {stage:3,speaker:'&#127916;环球剧场',
+   narrative:'<span class="hl">&#127961; 1599年·泰晤士河南岸</span><br>崭新的环球剧场在阳光下熠熠生辉。你是"宫内大臣剧团"的股东兼剧作家。伦敦的观众热情而挑剔——你的笔，就是你的利剑。',
+   text:'新剧即将上演，你决定写什么？',
+   choices:[{icon:'&#128557;',label:'悲剧《哈姆雷特》',effect:'+智慧声望',stat:'wisdom',val:3,stat2:'fame',val2:2,unlock:'burbage'},{icon:'&#128513;',label:'喜剧《仲夏夜之梦》',effect:'+情感财富',stat:'love',val:3,stat2:'wealth',val2:2,unlock:'elizabeth'},{icon:'&#128081;',label:'历史剧《亨利五世》',effect:'+声望财富',stat:'fame',val:3,stat2:'wealth',val2:2}]},
+  {stage:4,speaker:'&#127769;命运低语',
+   narrative:'<span class="hl">&#127942; 1606年·巅峰与谷底</span><br>11岁的儿子哈姆内特夭折，你悲痛欲绝，却将痛苦化作最震撼的悲剧——《李尔王》《麦克白》相继问世。如今你誉满天下，但内心总有一角空落落的。',
+   text:'你已经登上了戏剧界的顶峰。下一步怎么走？',
+   choices:[{icon:'&#128214;',label:'继续深挖人性悲剧',effect:'+智慧声望',stat:'wisdom',val:3,stat2:'fame',val2:2,unlock:'james'},{icon:'&#127968;',label:'回归家庭享受天伦',effect:'+情感财富',stat:'love',val:3,stat2:'wealth',val2:2},{icon:'&#127769;',label:'写传奇剧宽恕和解',effect:'+情感智慧',stat:'love',val:2,stat2:'wisdom',val2:3,unlock:'jonson'}]},
+  {stage:5,speaker:'&#128329;时光回响',
+   narrative:'<span class="hl">&#127870; 1616年·斯特拉特福</span><br>阳光穿过苹果树洒在你的脸上。你写下了38部剧本、154首十四行诗、创造了1700多个英语单词。现在，是时候写下最后的句点了。',
+   text:'你希望后世如何记住你？',
+   choices:[{icon:'&#127775;',label:'"不朽的吟游诗人"',effect:'+声望智慧',stat:'fame',val:3,stat2:'wisdom',val2:2,unlock:'fairyouth'},{icon:'&#128153;',label:'"最懂人心的作家"',effect:'+情感声望',stat:'love',val:3,stat2:'fame',val2:2,unlock:'darklady'},{icon:'&#128176;',label:'"才华与财富兼备"',effect:'+财富声望',stat:'wealth',val:3,stat2:'fame',val2:2}]}
+];
+
+const ENDING_TEXTS={
+  fame:['你成为<strong>"不朽的吟游诗人"</strong>！作品被译成所有主要语言，你是英语语言最伟大的作家。','你是受人尊敬的剧作家，名字将镌刻在戏剧史上。','你享受写作的快乐，但名声未远扬——但你对戏剧的热爱是真实的。'],
+  love:['你是<strong>"最懂人心的作家"</strong>！爱情故事让无数人落泪，你做到了"爱所有人，信任少数人，不负任何人"。','你珍惜身边的人，作品充满温暖的情感，触动了人们心中最柔软的地方。','你有些孤独，但作品依然闪烁着情感的火花。'],
+  wealth:['你<strong>"财富与才华兼备"</strong>！买下斯特拉特福最大的宅邸，为家族赢得纹章，商业与艺术一样出众！','生活还算宽裕，有舒适的房子和稳定的收入。','一生清贫，但精神世界无人能及。'],
+  wisdom:['你是<strong>"智慧的化身"</strong>！"To be,or not to be"是你对人类存在本身的追问。','你富有智慧，作品充满发人深省的思考。','生活教会了你很多，快乐本身也是一门学问。']};
+
+const WORLD_CHARS = [
+  {id:'john',name:'约翰·莎士比亚',title:'父亲 · 手套商人',emoji:'&#128104;',rel:'family',bio:'莎士比亚的父亲，斯特拉特福镇镇长。他教会了小威廉经商的头脑和对世界的热爱。',dialog:'"孩子，这个世界比你能想象的更大。"',unlock:'选择鼓励表达'},
+  {id:'mary',name:'玛丽·雅顿',title:'母亲 · 名门之后',emoji:'&#128105;',rel:'family',bio:'莎士比亚的母亲，出身于当地富有的自耕农家庭。她给了小威廉温暖的爱和对故事的喜爱。',dialog:'"小威廉，我的小诗人，愿你永远保持这份温柔。"',unlock:'选择给予关爱'},
+  {id:'anne',name:'安妮·海瑟薇',title:'妻子 · 一生所爱',emoji:'&#128105;',rel:'family',bio:'莎士比亚的妻子，比他大8岁。两人于1582年结婚，育有三子。虽长期分居，但安妮始终守护着斯特拉特福的家。',dialog:'"威廉，无论你在伦敦有多成功，记得家里永远有盏灯为你亮着。"',unlock:'选择沉浸在书本'},
+  {id:'hamnet',name:'哈姆内特',title:'儿子 · 早逝的爱',emoji:'&#128102;',rel:'family',bio:'莎士比亚唯一的儿子，与妹妹朱迪思是双胞胎。1596年11岁时夭折，死因不明。他的去世深刻影响了莎士比亚后来的悲剧创作。',dialog:'"爸爸，你写的那些故事……它们会永远活着吗？"',unlock:'选择向安妮求婚'},
+  {id:'burbage',name:'理查·伯比奇',title:'伙伴 · 首席演员',emoji:'&#128104;',rel:'friend',bio:'莎士比亚最亲密的合作伙伴，宫内大臣剧团的首席演员。他演出了哈姆雷特、理查三世、奥赛罗等几乎所有莎剧主角。',dialog:'"威廉，你的台词让我成为了最伟大的演员——但也是你的剧本让我夜不能寐。"',unlock:'选择写《哈姆雷特》'},
+  {id:'elizabeth',name:'伊丽莎白一世',title:'女王 · 戏剧守护者',emoji:'&#128081;',rel:'patron',bio:'英格兰女王，在位45年的"童贞女王"。她的统治时期正是英国文艺复兴的黄金时代，她本人也是戏剧的热心赞助者。',dialog:'"年轻的莎士比亚，你的台词让寡人感动落泪。继续写下去，英格兰需要你的声音。"',unlock:'选择写喜剧'},
+  {id:'marlowe',name:'克里斯托弗·马洛',title:'对手 · 早逝天才',emoji:'&#128104;',rel:'rival',bio:'莎士比亚之前最伟大的英国剧作家。比莎翁大2个月，29岁便死于斗殴。他的《浮士德博士》对莎士比亚产生了深远影响。',dialog:'"莎士比亚？那个从斯特拉特福来的乡下人？哼……他的确有点才华。"',unlock:'选择去伦敦'},
+  {id:'james',name:'詹姆斯一世',title:'国王 · 皇家赞助人',emoji:'&#128081;',rel:'patron',bio:'1603年继位的苏格兰国王。登基后立即将宫内大臣剧团收为"国王供奉剧团"，亲自赞助。莎士比亚的《麦克白》是为他创作的。',dialog:'"朕命令你——为朕写一部关于苏格兰的剧！要有女巫！"',unlock:'选择深挖悲剧'},
+  {id:'jonson',name:'本·琼森',title:'朋友 · 亦敌亦友',emoji:'&#128104;',rel:'friend',bio:'莎士比亚的同时代剧作家和诗人。两人既是朋友也是竞争对手。1623年，他在《第一对开本》中写道："他不属于一个时代，而是属于所有世纪。"',dialog:'"莎士比亚？那个家伙……我承认，他比我强。但不准告诉他我这么说过。"',unlock:'选择写传奇剧'},
+  {id:'fairyouth',name:'"Fair Youth"',title:'神秘赞助人',emoji:'&#128150;',rel:'mystery',bio:'莎士比亚十四行诗前126首所献给的神秘年轻贵族。真实的身份至今是文学史上最大的谜团之一。',dialog:'"你的十四行诗……每一首都在说着不可言说的秘密。"',unlock:'选择不朽的吟游诗人'},
+  {id:'darklady',name:'"Dark Lady"',title:'黑肤女郎',emoji:'&#128147;',rel:'mystery',bio:'莎士比亚十四行诗后28首所献给的神秘女性。她的真实身份同Fair Youth一样，是永恒的谜题。',dialog:'"你写尽了我的眼眸、我的肌肤、我的不完美——却从未问过我的名字。"',unlock:'选择最懂人心的作家'}
+];
+
+const WORKS_DATA = [
+  {t:'哈姆雷特',e:'Hamlet',y:'tragedy',yr:'1600',d:'丹麦王子的复仇故事。"To be,or not to be"是最著名的独白。'},
+  {t:'奥赛罗',e:'Othello',y:'tragedy',yr:'1603',d:'摩尔人将军因嫉妒而毁灭。伊阿古的阴谋导致最心碎的悲剧。'},
+  {t:'李尔王',e:'King Lear',y:'tragedy',yr:'1605',d:'国王在暴风雨中疯狂。关于权力、亲情与人性。'},
+  {t:'麦克白',e:'Macbeth',y:'tragedy',yr:'1606',d:'野心将军弑君篡位。关于野心与良心的最深刻描绘。'},
+  {t:'罗密欧与朱丽叶',e:'Romeo and Juliet',y:'tragedy',yr:'1595',d:'史上最经典的爱情悲剧。两个世仇家族的儿女为爱殉情。'},
+  {t:'仲夏夜之梦',e:'A Midsummer Night\'s Dream',y:'comedy',yr:'1595',d:'森林中的魔法爱情喜剧。精灵帕克让一切混乱而浪漫。'},
+  {t:'威尼斯商人',e:'The Merchant of Venice',y:'comedy',yr:'1596',d:'"一磅肉"的故事。关于仁慈、正义与偏见的不朽杰作。'},
+  {t:'无事生非',e:'Much Ado About Nothing',y:'comedy',yr:'1598',d:'欢喜冤家的爱情攻防战。最机智幽默的对话。'},
+  {t:'第十二夜',e:'Twelfth Night',y:'comedy',yr:'1601',d:'女扮男装的多角恋。最浪漫的喜剧之一。'},
+  {t:'暴风雨',e:'The Tempest',y:'comedy',yr:'1611',d:'告别之作。魔法、宽恕与和解的传奇。'},
+  {t:'亨利五世',e:'Henry V',y:'history',yr:'1599',d:'阿金库尔战役的英雄。最著名的战争演讲。'},
+  {t:'理查三世',e:'Richard III',y:'history',yr:'1592',d:'残疾阴谋家的篡位史。最精彩的恶人形象。'},
+  {t:'凯撒大帝',e:'Julius Caesar',y:'tragedy',yr:'1599',d:'刺杀凯撒后的内战。最著名的演讲之一。'},
+  {t:'安东尼与克莉奥佩特拉',e:'Antony & Cleopatra',y:'tragedy',yr:'1606',d:'罗马将军与埃及女王的爱情绝唱。'}
+];
+
+const PLAY_DETAILS = {
+  '哈姆雷特':{intro:'阴森的埃尔西诺城堡，丹麦的夜雾笼罩着一切。年轻的王子哈姆雷特从威登堡大学被召回——父亲的突然去世、母亲的匆忙改嫁，一切都充满诡异。直到午夜时分，父亲鬼魂的出现揭开了可怕的真相：叔父克劳狄斯用毒药灌入父亲的耳朵，谋杀了亲兄长，篡夺了王位。哈姆雷特崩溃了。"时代脱节了——我竟生来要扭转乾坤！"他要复仇，但疯狂与理智的边界在哪里？',
+    chars:['哈姆雷特&#128104;','克劳狄斯&#128081;','奥菲莉亚&#128105;','鬼魂&#128123;'],
+    bg:'&#127984; 埃尔西诺城堡 · 午夜',npc:'&#128123; 哈姆雷特的父亲',line:'"替我报仇……但不要伤害你的母亲。"',
+    q:'"生存还是毁灭，这是一个值得考虑的问题。"',qx:'哈姆雷特在城堡的城墙上独白。他思考的不是复仇与否，而是"存在"本身的意义。这句话是西方文学中最著名的开场白，也是对生命本质最深刻的追问。',
+    game:{type:'choice',scene:'鬼魂说完了真相。哈姆雷特握紧你的手："我该怎么办？默默忍受命运暴虐的毒箭，还是挺身反抗？"',
+      c:[{t:'"装疯，伺机复仇"',r:'你选择了智慧。"让所有人以为我疯了……这样我就能看清每一个人的真面目。"',e:'good'},
+        {t:'"直接去揭发他！"',r:'你愤怒地冲向城堡。但克劳狄斯已有防备，你被卫兵拿下。',e:'bad'},
+        {t:'"先冷静寻找证据……"',r:'哈姆雷特点点头："有一出戏，可以替我试探国王的良心……"',e:'good'}]},
+    quiz:[{s:'哈姆雷特最后成功当上了丹麦国王',a:false},{s:'奥菲莉亚因父亲被杀和爱情破灭而发疯溺水',a:true},{s:'哈姆雷特在决斗中被毒剑刺中而死',a:true}]},
+  '奥赛罗':{intro:'威尼斯共和国的英雄摩尔人奥赛罗将军，刚刚与元老之女苔丝狄蒙娜秘密成婚。他们的爱情跨越了种族与地位的鸿沟，本是一段佳话。但奥赛罗的旗官伊阿古——一个被公认为"诚实"的人——因未被提拔为副将而怀恨在心。他编织了一张恶毒的谎言之网，用最细微的线索（一块手帕、几句暗示）将奥赛罗推入嫉妒的深渊。"哦，大人，要小心嫉妒！那是一个绿眼的妖魔。"',
+    chars:['奥赛罗&#128104;','苔丝狄蒙娜&#128105;','伊阿古&#128128;','凯西奥&#128104;'],
+    bg:'&#127987; 塞浦路斯 · 军营',npc:'&#128128; 伊阿古',line:'"哦，大人，要小心嫉妒！那是一个绿眼的妖魔。"',
+    q:'"她因为慷慨而爱他，他因为同情而爱她。"',qx:'奥赛罗向元老们解释苔丝狄蒙娜为何爱上他——不是巫术，而是她被他讲述的传奇经历所打动。这是全剧最真诚的告白之一，也是最悲剧性的反讽。',
+    game:{type:'find',scene:'伊阿古在你的耳边低语。奥赛罗的信任在动摇。找出伊阿古制造"证据"所用的物品！',
+      items:[{e:'🧣',n:'苔丝狄蒙娜的手帕',ok:true},{e:'🗡️',n:'奥赛罗的剑',ok:false},{e:'🍷',n:'凯西奥的酒',ok:false},{e:'💌',n:'苔丝狄蒙娜的情书',ok:false}],tip:'提示：伊阿古用一件小物品制造了不忠的假象。'},
+    quiz:[{s:'奥赛罗是威尼斯军队的将军',a:true},{s:'伊阿古是奥赛罗的副将',a:false},{s:'在剧终时伊阿古的阴谋被揭穿',a:true}]},
+  '李尔王':{intro:'年迈的不列颠国王李尔决定将自己的国土分给三个女儿。他让她们当面表白对自己的爱——大女儿高纳里尔和二女儿里根用甜言蜜语赢得了全部土地，而真正爱他的小女儿考狄利娅因拒绝阿谀奉承被剥夺继承权并驱逐出境。李尔很快后悔了——两个大女儿的真实面目暴露，将他赶出城堡，抛入暴风雨肆虐的荒野。在雷电交加的荒原上，曾经不可一世的国王失去了理智，却第一次看清了人性的真相。',
+    chars:['李尔王&#128104;','高纳里尔&#128105;','里根&#128105;','考狄利娅&#128105;'],
+    bg:'&#127769; 暴风雨中的荒野',npc:'&#128104; 李尔王',line:'"吹吧，风！把你的喉咙吹破！"',
+    q:'"一个感恩的孩子比毒蛇的牙齿更锋利。"',qx:'李尔在暴风雨中清醒——两个甜言蜜语的女儿比毒蛇还狠毒。最深的痛苦来自最亲的人的背叛。',
+    game:{type:'order',scene:'按三个女儿对父亲"爱的表白"排序——从最真诚到最虚伪：',
+      items:[{t:'考狄利娅："我爱您正如女儿爱父亲。"',ord:1},{t:'高纳里尔："我爱您胜过世间一切珍宝！"',ord:3},{t:'里根："姐姐的话就是我的心声。"',ord:2}],
+      tip:'最华丽的语言有时是最深的谎言。'},
+    quiz:[{s:'考狄利娅最后带领法军为父复仇',a:true},{s:'李尔王在剧终恢复了王位',a:false},{s:'弄臣是剧中唯一敢对李尔说真话的人',a:true}]},
+  '麦克白':{intro:'苏格兰将军麦克白在平定叛乱后归国途中，遇见三个神秘的女巫。她们预言他将成为考特爵士、进而成为国王！预言很快应验了一半——国王邓肯赐予他考特爵士的头衔。野心瞬间被点燃。而他的妻子麦克白夫人更加炽烈，她怂恿丈夫趁国王到访城堡时将其杀害。"像男子汉一样把这事干了！"血腥的王冠到手了，但代价是永不安眠的灵魂。"不，不要再睡了！麦克白已经谋杀了睡眠！"',
+    chars:['麦克白&#128104;','麦克白夫人&#128105;','班柯&#128104;','三女巫&#129748;'],
+    bg:'&#127769; 因弗内斯城堡 · 深夜',npc:'&#129748; 麦克白夫人',line:'"一点点水就能洗干净吗？不……这双手上的血迹永远洗不掉了。"',
+    q:'"人生不过是一个行走的影子，一个在舞台上指手画脚的拙劣演员。"',qx:'当妻子死去、军队压境时，麦克白说出了这段虚无主义的独白。他的人生——野心、杀戮、王位——到头来不过是一出喧哗而毫无意义的戏剧。',
+    game:{type:'choice',scene:'麦克白夫人递给你一把刀："国王正在熟睡。只要轻轻一下……你做得到。"',
+      c:[{t:'"我不能背叛君王！"',r:'你退缩了。夫人冷笑一声亲自下手。从此噩梦缠身。',e:'neutral'},
+        {t:'"为了王冠——我干！"',r:'鲜血染红了你的手，也染红了你的灵魂。"不，不要再睡了！"将永远回响。',e:'bad'},
+        {t:'"先去找女巫问清楚。"',r:'你走进荒野。三女巫给了新的预言——但每一个都是陷阱。',e:'good'}]},
+    quiz:[{s:'麦克白在宴会上看见了被杀的班柯的鬼魂',a:true},{s:'麦克白夫人最终死于战场',a:false},{s:'女巫预言"凡是妇人生育的人都不能伤害麦克白"',a:true}]},
+  '罗密欧与朱丽叶':{intro:'意大利维罗纳城，蒙太古与凯普莱特两大世家的仇恨深如血海。但命运弄人——蒙太古家的独子罗密欧偷偷混入凯普莱特家的舞会，与美丽的朱丽叶一见钟情。"玫瑰不叫玫瑰，依然芳香如故。"他们在月光下的阳台许下永恒誓言，次日便在劳伦斯神父的见证下秘密成婚。然而一场街头斗殴打破了所有希望——罗密欧杀死朱丽叶的表兄提伯尔特，被放逐出城。绝望之中，神父的假死计划出了致命的差错……',
+    chars:['罗密欧&#128104;','朱丽叶&#128105;','奶妈&#128105;','茂丘西奥&#128104;'],
+    bg:'&#127799; 月光下的阳台',npc:'&#128152; 朱丽叶',line:'"罗密欧，为什么你是罗密欧呢？放弃你的姓名吧！"',
+    q:'"是什么在闪耀？那边窗户里亮起来的是什么？那是东方，朱丽叶就是太阳！"',qx:'这是英语文学中最著名的情话。在凯普莱特家的花园中，罗密欧仰望朱丽叶的阳台，将他的爱人比作太阳——她照亮了他黑暗的世界，也照亮了伊丽莎白时代的所有舞台。',
+    game:{type:'choice',scene:'朱丽叶在阳台上叹息，月光照在她脸上。"如果你真的爱我——带我走吧。"',
+      c:[{t:'"我们现在就私奔！"',r:'劳伦斯神父为你们秘密举行了婚礼。但家族的仇恨不会放过你们。',e:'good'},
+        {t:'"让我去求你父亲。"',r:'凯普莱特大人勃然大怒："蒙太古家的人休想！"你被赶了出去。',e:'bad'},
+        {t:'"等待时机，慢慢来。"',r:'理智压过了冲动。但命运的齿轮已经不可逆转地转动了……',e:'neutral'}]},
+    quiz:[{s:'罗密欧与朱丽叶在舞会上一见钟情',a:true},{s:'朱丽叶比罗密欧小三岁',a:false},{s:'茂丘西奥被提伯尔特杀死',a:true}]},
+  '仲夏夜之梦':{intro:'仲夏夜的森林是一个充满魔法的地方。精灵王奥布朗与王后提泰妮娅在激烈争吵——他要一个印度小童做侍从，她不肯给。为了报复，奥布朗让淘气的精灵帕克用爱情花汁滴在提泰妮娅的眼皮上：她将疯狂爱上醒来第一眼看到的生物——哪怕是一头驴！与此同时，四名雅典青年男女逃入森林，他们的爱情也乱成了一锅粥。帕克的魔法让所有人爱错了对象，森林里陷入了令人捧腹的大混战！',
+    chars:['帕克&#129498;','奥布朗&#128104;','赫米娅&#128105;','拉山德&#128104;'],
+    bg:'&#127811; 仲夏夜的魔法森林',npc:'&#129498; 帕克（精灵）',line:'"哈哈！这些凡人的蠢事真是太好玩了！"',
+    q:'"真爱之路从来不是平坦的。"',qx:'这是剧中反复出现的主题。无论是仙王仙后的争吵，还是雅典年轻人的混乱爱情，都在告诉我们：真正的爱情总要经历波折和考验。',
+    game:{type:'find',scene:'帕克把爱情花汁弄混了！帮它找出森林里"真实存在"的爱情线：',
+      items:[{e:'❤️',n:'赫米娅→拉山德',ok:true},{e:'💔',n:'赫米娅→狄米特律斯',ok:false},{e:'💕',n:'海丽娜→拉山德',ok:false},{e:'💓',n:'提泰妮娅→驴头',ok:true},{e:'💞',n:'海丽娜→狄米特律斯',ok:true},{e:'💝',n:'拉山德→赫米娅',ok:true}],tip:'点击所有"正确"的感情箭头！'},
+    quiz:[{s:'帕克把爱情花汁滴在了提泰妮娅的眼皮上',a:true},{s:'最终所有人都和正确的人结了婚',a:false},{s:'织工波顿被变成了一头驴',a:true}]},
+  '威尼斯商人':{intro:'威尼斯商人安东尼奥是个善良但有些忧郁的富商。他的好友巴萨尼奥爱上了美丽的富家女鲍西娅，但需要三千块钱作为求婚的排场。安东尼奥的船都在海上，于是他们向犹太放高利贷的夏洛克借钱。夏洛克平日饱受基督徒的歧视，他提出了一份可怕的契约：如果到期不还，就从安东尼奥身上割下整整一磅肉。海上风暴让安东尼奥的船沉没了，还款日到期——夏洛克磨着他的刀走上了法庭！',
+    chars:['安东尼奥&#128104;','夏洛克&#128104;','鲍西娅&#128105;','巴萨尼奥&#128104;'],
+    bg:'&#127987; 威尼斯 · 法庭',npc:'&#128188; 鲍西娅（法官）',line:'"慈悲不是出于勉强。它是像甘霖一样从天上降下尘世。"',
+    q:'"闪光的并不都是金子。"',qx:'鲍西娅的求婚者需要在三个匣子间做出选择：金匣子、银匣子和铅匣子。金子的外表最诱人，但真正的宝藏藏在最不起眼的容器里——这是对所有"以貌取人"者的温柔讽刺。',
+    game:{type:'choice',scene:'鲍西娅女扮男装走上法庭。夏洛克磨着刀："我要按契约取回一磅肉！"',
+      c:[{t:'"严格按契约判！"',r:'鲍西娅微微一笑："契约写着一磅肉——没写一滴血。让他流血，财产全部充公！"',e:'good'},
+        {t:'"慈悲为怀吧！"',r:'"正义与仁慈各占一半。"夏洛克愤愤不平地接受了。',e:'neutral'},
+        {t:'"把夏洛克赶出去！"',r:'公爵皱眉。没有合法审判，威尼斯商业信誉崩塌。所有人都输了。',e:'bad'}]},
+    quiz:[{s:'鲍西娅女扮男装假扮法官',a:true},{s:'夏洛克最后得到了安东尼奥的一磅肉',a:false},{s:'安东尼奥的船全部沉没了',a:true}]},
+  '无事生非':{intro:'梅西纳城洋溢着欢乐的气氛。战争结束了，年轻的战士们凯旋归来。但有两颗心拒绝加入这场爱情游戏——泼辣聪明的贝特丽丝和骄傲的单身汉培尼狄克一见面就唇枪舌战。他们都公开宣称自己永远不会坠入爱河。不过，他们的朋友们可不同意。于是一场精心策划的"好戏"上演了：让贝特丽丝"无意中"听到培尼狄克爱她，让培尼狄克"不小心"知道贝特丽丝对他念念不忘。猜猜结果如何？',
+    chars:['贝特丽丝&#128105;','培尼狄克&#128104;','克劳狄奥&#128104;','希罗&#128105;'],
+    bg:'&#127968; 梅西纳 · 花园',npc:'&#128105; 贝特丽丝',line:'"上帝怎么会造出这么一个喋喋不休的傻瓜！"',
+    q:'"世界上有一种人，明明在恋爱，却自己骗自己。"',qx:'这句话完美概括了剧中的喜剧张力。贝特丽丝和培尼狄克都在自欺欺人——他们嘴上说讨厌对方，心里却在偷偷在意。朋友们的"小阴谋"只是帮他们看清了自己的真心。',
+    game:{type:'order',scene:'按事情发展的顺序排列这对欢喜冤家的故事：',
+      items:[{t:'舞会上互相讽刺',ord:1},{t:'听说对方"其实喜欢你"',ord:2},{t:'开始对彼此温柔',ord:3},{t:'承认相爱',ord:4}],tip:'从相杀到相爱～'},
+    quiz:[{s:'贝特丽丝和培尼狄克从一开始就相爱',a:false},{s:'希罗在新婚之夜被当众诬陷不忠',a:true},{s:'最终每个人都获得了幸福的结局',a:true}]},
+  '第十二夜':{intro:'伊利里亚的海岸，孪生兄妹维奥拉和西巴斯辛在海难中失散。维奥拉认为哥哥已经遇难，她女扮男装化名"西萨里奥"，成为了年轻的奥西诺公爵的侍从——并深深爱上了他。但公爵却痴情于富有的伯爵小姐奥丽维娅，派"西萨里奥"去做爱情的信使。谁料奥丽维娅却对这个俊美的"男信使"一见钟情！而与此同时，奥丽维娅的管家马伏里奥又收到了一封伪造的情书……误会叠误会，爱情像一场疯狂的圆舞曲。',
+    chars:['维奥拉&#128105;','奥西诺&#128104;','奥丽维娅&#128105;','马伏里奥&#128104;'],
+    bg:'&#127965; 伊利里亚 · 公爵府',npc:'&#128104; 奥西诺公爵',line:'"如果音乐是爱情的食粮，请继续演奏！"',
+    q:'"有些人生来伟大，有些人成就伟大，有些人的伟大是被强加的。"',qx:'马伏里奥捡到伪造的情书时欣喜若狂——他以为自己被奥丽维娅看中了。这句话讽刺了那些自以为是的庸人，也让我们思考：人的价值到底是什么？',
+    game:{type:'find',scene:'找出这部剧里"确实存在"的感情线（有些看着奇怪但真的存在！）：',
+      items:[{e:'💜',n:'维奥拉→奥西诺',ok:true},{e:'💛',n:'奥丽维娅→女扮男装的维奥拉',ok:true},{e:'💙',n:'奥西诺→奥丽维娅',ok:true},{e:'🖤',n:'马伏里奥→奥西诺',ok:false},{e:'💚',n:'西巴斯辛→奥丽维娅',ok:true},{e:'🤍',n:'奥丽维娅→马伏里奥',ok:false}],tip:'点击所有合理存在的感情线！'},
+    quiz:[{s:'剧名"第十二夜"指圣诞节后第十二天的狂欢节',a:true},{s:'维奥拉的哥哥西巴斯辛最终死了',a:false},{s:'奥丽维娅最后嫁给了西巴斯辛',a:true}]},
+  '暴风雨':{intro:'一群意大利贵族在海上遭遇了可怕的暴风雨，船只破碎，所有人漂流到一座荒岛上。这座岛被魔法笼罩——而魔法的主人正是十二年前被他们放逐的米兰公爵普洛斯彼罗。他和三岁的女儿米兰达在岛上生活了十二年，学会了高深的魔法，身边只有精灵爱丽儿和半人半兽的卡利班陪伴。现在，仇人们终于落入了他的手掌心。但当他举起魔杖准备复仇时，女儿与仇人之子腓迪南正在花园里相爱——复仇还是宽恕？普洛斯彼罗面临了人生最大的选择。',
+    chars:['普洛斯彼罗&#128104;','米兰达&#128105;','爱丽儿&#129666;','卡利班&#128104;'],
+    bg:'&#127754; 魔法岛屿',npc:'&#129666; 爱丽儿（精灵）',line:'"全都在沉睡……主人，您要我做什么？"',
+    q:'"我们都是梦中的人物，我们的一生是在酣睡之中。"',qx:'这是莎士比亚最深邃的台词之一。在告别戏剧舞台之前，他借普洛斯彼罗之口说出了自己对人世的感悟：人生如梦，万物皆幻，唯有爱和宽恕是真实的。',
+    game:{type:'choice',scene:'仇人们跪在面前。普洛斯彼罗举起魔杖——然后停住了。米兰达与仇人的儿子相爱了。',
+      c:[{t:'"我宽恕你们。去吧。"',r:'他放下魔杖。"爱丽儿，你自由了。"选择了和解与回家。',e:'good'},
+        {t:'"你们必须付出代价！"',r:'风暴再起。复仇之后只剩下空旷的海滩和无尽的孤独。',e:'bad'},
+        {t:'"让米兰达留下，我们回去。"',r:'"这座岛是你们的了……而我终于可以回家了。"',e:'neutral'}]},
+    quiz:[{s:'普洛斯彼罗是米兰公爵',a:true},{s:'卡利班是善良美丽的精灵',a:false},{s:'在剧终时，普洛斯彼罗放弃了魔法并选择了宽恕',a:true}]},
+  '亨利五世':{intro:'年轻的亨利五世继承了父亲留下的王位和一个分裂的英格兰。他决心通过征服法国来团结国家。在阿金库尔，他的军队疲惫、饥饿、人数只有敌人的五分之一。但亨利五世发表了他最著名的演讲："凡是度过今天这一关的人，将永远被敬仰！"他的士兵们被点燃了，以少胜多赢得了这场传奇战役。战后他赢得了法国公主凯瑟琳的芳心——一个英格兰的武夫成为法兰西王位的继承人。这是莎士比亚历史剧中最振奋人心的篇章。',
+    chars:['亨利五世&#128081;','法国太子&#128104;','凯瑟琳&#128105;'],
+    bg:'&#9876; 阿金库尔 · 清晨',npc:'&#128081; 亨利五世',line:'"再冲一次缺口！冲啊！英格兰的勇士们！"',
+    q:'"凡是度过今天这一关而活着回家的，每次提到这一天就会感到自豪。"',qx:'阿金库尔战役前的演讲是英国文学中最激动人心的战前动员。亨利告诉他的士兵：今天不是征服法国，而是创造传奇。每一个活下来的人，都将永生受人尊敬。',
+    game:{type:'find',scene:'亨利五世要鼓舞士气。选出最能激励战士们的东西：',
+      items:[{e:'👑',n:'国王的王冠',ok:false},{e:'⚔️',n:'出鞘的利剑',ok:true},{e:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',n:'圣乔治十字旗',ok:true},{e:'🍺',n:'一桶啤酒',ok:false},{e:'📯',n:'战号',ok:true},{e:'🛡️',n:'家族盾徽',ok:false}],tip:'选出最能激励战士们冲锋陷阵的东西！'},
+    quiz:[{s:'亨利五世在阿金库尔战役中是以少胜多',a:true},{s:'亨利五世最终没能得到法国公主',a:false},{s:'剧中的名言"再冲一次缺口"是亨利在战场上喊出的',a:true}]},
+  '理查三世':{intro:'英格兰玫瑰战争的硝烟中，约克家族的理查——一个驼背瘸腿的畸形人——带着滔天的野心和恶毒的心智走上了历史舞台。"既然我不能做一个情人，我就决心做一个恶棍！"他不择手段：先用甜言蜜语让哥哥克莱伦斯入狱被杀，再操纵宫廷舆论，最后将两个年幼的侄子——合法继承人——关进伦敦塔秘密杀害。他的诡计如此精巧，以至于他一路畅通无阻地登上了王位。但血腥的王位坐不稳……',
+    chars:['理查三世&#128128;','白金汉公爵&#128104;','安妮夫人&#128105;'],
+    bg:'&#127984; 伦敦塔 · 密室',npc:'&#128128; 理查三世',line:'"一匹马！一匹马！用我的王国换一匹马！"',
+    q:'"如今是我们不满的冬天变成了光荣的夏天。"',qx:'理查三世全剧的开场白，也是英语文学中最著名的恶人独白。他用巧妙的语言将玫瑰战争的混乱描述为"光荣的夏天"，而他自己——这个"未经雕琢、缺少爱神之美的畸形人"——就要展开他的阴谋了。',
+    game:{type:'order',scene:'理查三世为登上王位，按顺序做了哪些事？',
+      items:[{t:'在玫瑰战争中立功',ord:1},{t:'设计陷害克莱伦斯',ord:2},{t:'追求并娶了安妮夫人',ord:3},{t:'把侄子们关进伦敦塔',ord:4},{t:'加冕为英格兰国王',ord:5}],tip:'点击按历史顺序排列'},
+    quiz:[{s:'理查三世在博斯沃思战役前会见了被他害死的所有人的鬼魂',a:true},{s:'理查三世最后得到了他的马',a:false},{s:'理查三世在剧中是一个魅力十足但又残忍阴险的反派',a:true}]},
+  '凯撒大帝':{intro:'公元前44年的罗马，尤利乌斯·凯撒在连年征战后成为了终身独裁官。元老院的共和派担心他称帝，密谋刺杀他。"解放者"的领袖布鲁图斯——凯撒最信任的朋友——陷入了痛苦的挣扎。"不是我不爱凯撒，而是我更爱罗马。"三月十五日，元老院议事厅，六十名元老围住了凯撒。短剑齐下。凯撒看到了布鲁图斯手中的匕首，绝望地说出那句著名的话："还有你吗？我的孩子？"刺杀没有带来自由——带来了十年的内战。',
+    chars:['凯撒&#128081;','布鲁图斯&#128104;','安东尼&#128104;','卡西乌斯&#128104;'],
+    bg:'&#127481;&#127479; 罗马 · 元老院',npc:'&#128104; 布鲁图斯',line:'"不是我不爱凯撒，而是我更爱罗马。"',
+    q:'"朋友们，罗马人，同胞们，请听我说。"',qx:'马克·安东尼在凯撒葬礼上的演讲——表面上在赞美布鲁图斯是"正人君子"，但每一句话都在引爆民众的怒火。他用精妙的修辞术将凶手变成了叛徒，将独裁者变成了圣人。这是西方修辞学的巅峰范例。',
+    game:{type:'choice',scene:'三月十五日，元老院。凯撒踏入议事厅。布鲁图斯递给你一把匕首："为了罗马，一起动手吗？"',
+      c:[{t:'"为了罗马——刺！"',r:'凯撒看着布鲁图斯："还有你吗？我的孩子？"然后倒下。内战开始。',e:'neutral'},
+        {t:'"保护凯撒！"',r:'你冲上前但寡不敌众。凯撒倒在面前。安东尼称你是"唯一忠诚的罗马人"。',e:'good'},
+        {t:'"我下不了手……"',r:'你退后逃离。布鲁图斯战败自刎前说："凯撒，我杀了你但没杀死罗马。"',e:'bad'}]},
+    quiz:[{s:'凯撒被布鲁图斯等元老刺杀',a:true},{s:'凯撒死后罗马立即恢复了和平',a:false},{s:'安东尼的演讲煽动了民众反对密谋者',a:true}]},
+  '安东尼与克莉奥佩特拉':{intro:'罗马三巨头之一的马克·安东尼在埃及的亚历山大港，沉醉于埃及艳后克莉奥佩特拉的温柔乡中。这个女人"拥有无穷的魅力：她让年迈的也烧起青春之火"。安东尼忘记了罗马，忘记了妻子，忘记了责任。而与此同时，年轻的屋大维——未来的奥古斯都大帝——正在罗马一步步蚕食安东尼的势力。当爱情与权力不可兼得时，安东尼做出了致命的抉择。他追击逃出战场的克莉奥佩特拉舰队，在亚克兴海战中大败。在假死消息的误导下，安东尼拔剑自刎……而克莉奥佩特拉用一条毒蛇完成了最后的传奇。',
+    chars:['安东尼&#128104;','克莉奥佩特拉&#128147;','屋大维&#128104;'],
+    bg:'&#127760; 亚历山大港 · 王宫',npc:'&#128147; 克莉奥佩特拉',line:'"给我一千个吻！然后又一千个……"',
+    q:'"岁月不能使她衰老，习惯不能让她陈腐。"',qx:'恩诺巴布斯形容克莉奥佩特拉的魅力。这个女人让罗马最强大的将军拜倒在她的脚下——她的魅力超越了时光，让爱情战胜了政治。',
+    game:{type:'find',scene:'埃及艳后想送一件礼物表达永恒的爱。她会选什么？',
+      items:[{e:'👑',n:'埃及王冠',ok:false},{e:'💎',n:'一颗巨大的珍珠',ok:true},{e:'⚱️',n:'香料罐',ok:false},{e:'🦚',n:'孔雀',ok:false},{e:'⚓',n:'一艘战舰',ok:true},{e:'🌿',n:'尼罗河的莲花',ok:false}],tip:'历史记载：克莉奥佩特拉曾展示过最奢侈的财富……'},
+    quiz:[{s:'克莉奥佩特拉是埃及法老托勒密王朝的最后一位女王',a:true},{s:'安东尼在与屋大维的战斗中获胜',a:false},{s:'克莉奥佩特拉最后用毒蛇自杀',a:true}]},
+};
+
+const QUIZ_WORKS = [
+  {q:'"生存还是毁灭，这是一个值得考虑的问题。"出自哪部剧？',opts:['《麦克白》','《哈姆雷特》','《李尔王》','《暴风雨》'],a:1},
+  {q:'"整个世界是一个舞台，所有男男女女不过是演员而已。"出自？',opts:['《皆大欢喜》','《第十二夜》','《威尼斯商人》','《仲夏夜之梦》'],a:0},
+  {q:'"玫瑰不叫玫瑰，依然芳香如故。"出自哪部剧？',opts:['《罗密欧与朱丽叶》','《奥赛罗》','《仲夏夜之梦》','《无事生非》'],a:0},
+  {q:'"真爱之路从来不是平坦的。"出自？',opts:['《第十二夜》','《皆大欢喜》','《仲夏夜之梦》','《威尼斯商人》'],a:2},
+  {q:'"如果音乐是爱情的食粮，请继续演奏。"出自？',opts:['《第十二夜》','《无事生非》','《仲夏夜之梦》','《暴风雨》'],a:0},
+  {q:'"闪光的并不都是金子。"出自哪部剧？',opts:['《威尼斯商人》','《哈姆雷特》','《李尔王》','《雅典的泰门》'],a:0},
+  {q:'"戴王冠的头，是不得安宁的。"出自？',opts:['《理查三世》','《亨利四世》下篇','《麦克白》','《李尔王》'],a:1},
+  {q:'"对你自己忠实。"出自哪部剧？',opts:['《哈姆雷特》','《皆大欢喜》','《奥赛罗》','《李尔王》'],a:0},
+  {q:'"一匹马！一匹马！用我的王国换一匹马！"出自？',opts:['《理查三世》','《亨利五世》','《麦克白》','《约翰王》'],a:0},
+  {q:'"我们都是梦中的人物。"出自？',opts:['《仲夏夜之梦》','《暴风雨》','《冬天的故事》','《辛白林》'],a:1},
+  {q:'"慈悲不是出于勉强。"出自？',opts:['《威尼斯商人》','《皆大欢喜》','《一报还一报》','《终成眷属》'],a:0},
+  {q:'"简洁是智慧的灵魂。"出自？',opts:['《哈姆雷特》','《爱的徒劳》','《无事生非》','《李尔王》'],a:0}
+];
+
+const QUOTES = [
+  {text:'"To be, or not to be: that is the question."',source:'——《哈姆雷特》'},
+  {text:'"All the world\'s a stage, and all the men and women merely players."',source:'——《皆大欢喜》'},
+  {text:'"What\'s in a name? That which we call a rose by any other name would smell as sweet."',source:'——《罗密欧与朱丽叶》'},
+  {text:'"Love looks not with the eyes, but with the mind."',source:'——《仲夏夜之梦》'},
+  {text:'"The course of true love never did run smooth."',source:'——《仲夏夜之梦》'},
+  {text:'"If music be the food of love, play on."',source:'——《第十二夜》'},
+  {text:'"Brevity is the soul of wit."',source:'——《哈姆雷特》'},
+  {text:'"This above all: to thine own self be true."',source:'——《哈姆雷特》'},
+  {text:'"All that glitters is not gold."',source:'——《威尼斯商人》'},
+  {text:'"Uneasy lies the head that wears a crown."',source:'——《亨利四世》下篇'},
+  {text:'"Now is the winter of our discontent."',source:'——《理查三世》'},
+  {text:'"A horse! A horse! My kingdom for a horse!"',source:'——《理查三世》'},
+  {text:'"Out, damned spot! Out, I say!"',source:'——《麦克白》'},
+  {text:'"Alas, poor Yorick! I knew him, Horatio."',source:'——《哈姆雷特》'},
+  {text:'"Parting is such sweet sorrow."',source:'——《罗密欧与朱丽叶》'},
+  {text:'"The quality of mercy is not strained."',source:'——《威尼斯商人》'},
+  {text:'"Shall I compare thee to a summer\'s day?"',source:'——《十四行诗》第18首'},
+  {text:'"We are such stuff as dreams are made on."',source:'——《暴风雨》'},
+  {text:'"Love all, trust a few, do wrong to none."',source:'——《皆大欢喜》'},
+  {text:'"The fault, dear Brutus, is not in our stars, But in ourselves."',source:'——《凯撒大帝》'},
+  {text:'"Cowards die many times before their deaths."',source:'——《凯撒大帝》'},
+  {text:'"Lord, what fools these mortals be!"',source:'——《仲夏夜之梦》'},
+  {text:'"We know what we are, but know not what we may be."',source:'——《哈姆雷特》'}
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let GS = {stage:0,fame:0,love:0,wealth:0,wisdom:0,choices:[],completed:false,unlocked:0,started:false,expression:'happy',unlockedChars:[]};
+let achievements = new Set();
+let wQuizDone = new Set();
+
+// ============================================================
+// SD CHARACTER DRAWING (Super Deformed / Ultra Cute)
+// ============================================================
+const CV = document.getElementById('char-canvas');
+const CX = CV.getContext('2d');
+let blink = 0, bState = 0, bobOffset = 0;
+
+function drawChar(stage, expr) {
+  CX.clearRect(0,0,190,220);
+  bobOffset = Math.sin(Date.now() * 0.002) * 2;
+  CX.save();
+  CX.translate(0, bobOffset);
+  CX.shadowColor='rgba(0,0,0,.06)';CX.shadowBlur=12;
+  CX.beginPath();CX.ellipse(95,208,34,5,0,0,Math.PI*2);CX.fill();
+  CX.shadowBlur=0;
+  switch(stage){
+    case 0:drawSBaby(expr);break;
+    case 1:drawSChild(expr);break;
+    case 2:drawSTeen(expr);break;
+    case 3:drawSAdult(expr);break;
+    case 4:drawSMature(expr);break;
+    case 5:drawSLegend(expr);break;
+    default:drawSAdult(expr);
+  }
+  CX.restore();
+}
+
+// SD Proportions: head is ~60% of total height, giant eyes
+function sdHead(x,y,r,skin='#fee7d6'){
+  CX.fillStyle=skin;
+  CX.beginPath();CX.arc(x,y,r,0,Math.PI*2);CX.fill();
+}
+
+function sdEyes(cx,cy,r,expr){
+  if(bState===1){CX.fillStyle='#fee7d6';CX.fillRect(cx-r,cy-r*.2,r*2.4,r*.7);CX.strokeStyle='#4a2e1a';CX.lineWidth=1;CX.beginPath();CX.moveTo(cx-r,cy);CX.lineTo(cx+r,cy);CX.stroke();return}
+  // Shadow
+  CX.fillStyle='#3d2b1f';
+  CX.beginPath();CX.ellipse(cx,cy,r*.82,r*1.12,0,0,Math.PI*2);CX.fill();
+  // White
+  CX.fillStyle='#fff';
+  CX.beginPath();CX.ellipse(cx,cy-1,r*.68,r*.98,0,0,Math.PI*2);CX.fill();
+  // Iris gradient
+  const g=CX.createRadialGradient(cx-r*.15,cy-r*.3,0,cx,cy,r*.52);
+  g.addColorStop(0,'#8b6b4a');g.addColorStop(.5,'#5a3d28');g.addColorStop(1,'#1a0f08');
+  CX.fillStyle=g;
+  CX.beginPath();CX.ellipse(cx,cy,r*.52,r*.62,0,0,Math.PI*2);CX.fill();
+  // Pupil
+  CX.fillStyle='#0a0502';CX.beginPath();CX.arc(cx,cy,r*.28,0,Math.PI*2);CX.fill();
+  // Catchlights
+  CX.fillStyle='#fff';CX.beginPath();CX.arc(cx-r*.2,cy-r*.25,r*.16,0,Math.PI*2);CX.fill();
+  CX.fillStyle='rgba(255,255,255,.6)';CX.beginPath();CX.arc(cx+r*.18,cy+r*.02,r*.09,0,Math.PI*2);CX.fill();
+  // Eyelashes
+  CX.strokeStyle='#3d2b1f';CX.lineWidth=1.2;
+  for(let i=-.8;i<=.8;i+=.4){const lx=cx+i*r*.55;CX.beginPath();CX.moveTo(lx,cy-r*1.02);CX.lineTo(lx+i*1.5,cy-r*1.3);CX.stroke()}
+}
+
+function sdMouth(x,y,expr){
+  CX.lineWidth=1.8;
+  if(expr==='happy'||expr==='default'){CX.strokeStyle='#c97070';CX.beginPath();CX.arc(x,y,5,.1,Math.PI-.1);CX.stroke()}
+  else if(expr==='sad'){CX.strokeStyle='#a06060';CX.beginPath();CX.arc(x,y+2,4,Math.PI+.2,Math.PI*2-.2);CX.stroke()}
+  else if(expr==='surprised'){CX.fillStyle='#c97070';CX.beginPath();CX.ellipse(x,y+1,3.5,4.5,0,0,Math.PI*2);CX.fill()}
+  else if(expr==='thinking'){CX.strokeStyle='#c97070';CX.beginPath();CX.arc(x-3,y,3.5,.3,Math.PI-.3);CX.stroke()}
+  else if(expr==='wow'){CX.fillStyle='#c97070';CX.beginPath();CX.ellipse(x,y+1,6,7,0,0,Math.PI*2);CX.fill()}
+}
+
+function sdBlush(x,y){CX.fillStyle='rgba(255,150,150,.18)';CX.beginPath();CX.ellipse(x,y,8,4,0,0,Math.PI*2);CX.fill()}
+
+function drawSBaby(e){
+  // Body
+  CX.fillStyle='#a8d8ea';CX.beginPath();CX.ellipse(95,162,32,28,0,0,Math.PI*2);CX.fill();
+  CX.fillStyle='#87ceeb';CX.beginPath();CX.arc(95,162,24,0,Math.PI*2);CX.fill();
+  // Diaper
+  CX.fillStyle='#f5f5dc';CX.beginPath();CX.roundRect(74,170,42,22,5);CX.fill();
+  // Legs + booties
+  CX.fillStyle='#fee7d6';CX.fillRect(78,188,14,16);CX.fillRect(98,188,14,16);
+  CX.fillStyle='#f7b5c8';CX.beginPath();CX.roundRect(75,202,20,8,4);CX.fill();CX.beginPath();CX.roundRect(95,202,20,8,4);CX.fill();
+  // Arms
+  CX.strokeStyle='#fee7d6';CX.lineWidth=7;CX.lineCap='round';
+  CX.beginPath();CX.moveTo(64,158);CX.quadraticCurveTo(48,162,42,176);CX.stroke();
+  CX.beginPath();CX.moveTo(126,158);CX.quadraticCurveTo(142,162,148,176);CX.stroke();
+  // Head (giant SD head)
+  sdHead(95,102,38);
+  // Hair tufts
+  CX.fillStyle='#b5772a';CX.beginPath();CX.arc(95,78,34,Math.PI,Math.PI*2);CX.fill();
+  CX.fillRect(68,74,10,12);CX.fillRect(84,68,14,12);CX.fillRect(108,72,10,14);
+  // Hat
+  CX.fillStyle='#f7b5c8';CX.beginPath();CX.ellipse(95,70,28,7,0,Math.PI,Math.PI*2);CX.fill();
+  CX.beginPath();CX.arc(95,61,20,Math.PI,Math.PI*2);CX.fill();
+  CX.fillStyle='#fff';CX.beginPath();CX.arc(95,54,6,0,Math.PI*2);CX.fill();
+  // Eyes
+  sdEyes(80,100,9,e);sdEyes(110,100,9,e);
+  sdBlush(72,114);sdBlush(118,114);
+  sdMouth(95,119,'happy');
+  // Pacifier
+  CX.fillStyle='#f7b5c8';CX.beginPath();CX.arc(101,124,6,0,Math.PI*2);CX.fill();
+  CX.strokeStyle='#f7b5c8';CX.lineWidth=1.5;CX.beginPath();CX.arc(101,124,9,-.3,.3);CX.stroke();
+}
+
+function drawSChild(e){
+  CX.fillStyle='#5c3a1e';CX.beginPath();CX.roundRect(68,138,54,46,5);CX.fill();
+  CX.fillStyle='#f0efe7';CX.fillRect(82,136,28,8);
+  CX.fillStyle='#3d2b1f';CX.fillRect(68,166,54,4);
+  CX.fillStyle='#4a4a5a';CX.fillRect(78,184,14,16);CX.fillRect(98,184,14,16);
+  CX.fillStyle='#3d2b1f';CX.beginPath();CX.roundRect(75,198,20,8,4);CX.fill();CX.beginPath();CX.roundRect(95,198,20,8,4);CX.fill();
+  CX.strokeStyle='#fee7d6';CX.lineWidth=6;CX.lineCap='round';
+  CX.beginPath();CX.moveTo(68,148);CX.quadraticCurveTo(54,154,46,168);CX.stroke();
+  // Book
+  CX.fillStyle='#8B0000';CX.beginPath();CX.roundRect(132,148,22,30,4);CX.fill();
+  CX.fillStyle='#f5e6c8';CX.beginPath();CX.roundRect(134,151,18,24,2);CX.fill();
+  CX.fillStyle='#3d2b1f';CX.font='7px serif';CX.fillText('WS',136,166);
+  CX.strokeStyle='#fee7d6';CX.lineWidth=6;
+  CX.beginPath();CX.moveTo(126,150);CX.quadraticCurveTo(136,146,138,154);CX.stroke();
+  sdHead(95,100,38);
+  CX.fillStyle='#8B5E3C';CX.beginPath();CX.arc(95,74,34,Math.PI,Math.PI*2);CX.fill();
+  CX.fillRect(64,70,62,18);CX.fillRect(66,68,58,12);
+  CX.fillStyle='rgba(255,255,255,.07)';CX.fillRect(78,70,12,8);
+  sdEyes(80,98,9,e);sdEyes(110,98,9,e);
+  sdBlush(72,112);sdBlush(118,112);
+  sdMouth(95,117,'happy');
+  CX.fillStyle='rgba(245,230,200,.6)';CX.beginPath();CX.moveTo(68,76);CX.lineTo(95,56);CX.lineTo(122,76);CX.closePath();CX.fill();
+}
+
+function drawSTeen(e){
+  CX.fillStyle='#2c5f2d';CX.beginPath();CX.roundRect(66,136,58,50,5);CX.fill();
+  CX.fillStyle='#3a7d3a';CX.fillRect(74,140,10,40);CX.fillRect(106,140,10,40);
+  CX.fillStyle='#DAA520';
+  for(let i=0;i<4;i++){CX.beginPath();CX.arc(95,146+i*9,2,0,Math.PI*2);CX.fill()}
+  CX.fillStyle='#f0efe7';CX.beginPath();CX.ellipse(95,134,26,7,0,0,Math.PI*2);CX.fill();
+  CX.fillStyle='#4a4a5a';CX.fillRect(78,186,14,14);CX.fillRect(98,186,14,14);
+  CX.fillStyle='#3d2b1f';CX.beginPath();CX.roundRect(75,198,22,10,4);CX.fill();CX.beginPath();CX.roundRect(93,198,22,10,4);CX.fill();
+  CX.strokeStyle='#fee7d6';CX.lineWidth=6;
+  CX.beginPath();CX.moveTo(66,144);CX.quadraticCurveTo(50,150,44,164);CX.stroke();
+  // Love letter
+  CX.fillStyle='#f5e6c8';CX.beginPath();CX.roundRect(130,140,24,32,3);CX.fill();
+  CX.strokeStyle='#c97070';CX.lineWidth=1.5;CX.beginPath();CX.arc(142,152,6,0,Math.PI*2);CX.stroke();
+  CX.fillStyle='#c97070';CX.beginPath();CX.arc(142,152,3,0,Math.PI*2);CX.fill();
+  CX.strokeStyle='#fee7d6';CX.lineWidth=6;
+  CX.beginPath();CX.moveTo(126,146);CX.quadraticCurveTo(134,140,140,146);CX.stroke();
+  sdHead(95,98,38);
+  CX.fillStyle='#6b4c30';CX.beginPath();CX.arc(95,70,32,Math.PI,Math.PI*2);CX.fill();
+  CX.fillRect(66,66,58,20);CX.fillRect(64,82,14,24);CX.fillRect(112,82,14,24);
+  CX.fillStyle='rgba(255,255,255,.06)';CX.fillRect(80,68,10,10);CX.fillRect(104,70,8,8);
+  sdEyes(80,96,9,e);sdEyes(110,96,9,e);
+  sdBlush(72,110);sdBlush(118,110);
+  sdMouth(95,115,e);
+}
+
+function drawSAdult(e){
+  CX.fillStyle='#8B0000';CX.beginPath();CX.roundRect(64,134,62,52,5);CX.fill();
+  CX.fillStyle='#a00000';CX.fillRect(72,138,12,42);CX.fillRect(108,138,12,42);
+  CX.fillStyle='#DAA520';
+  for(let i=0;i<5;i++){CX.beginPath();CX.arc(95,144+i*8,2,0,Math.PI*2);CX.fill()}
+  CX.fillStyle='#f0efe7';CX.beginPath();CX.ellipse(95,131,28,9,0,0,Math.PI*2);CX.fill();
+  CX.strokeStyle='#ddd';CX.lineWidth=.8;
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2;CX.beginPath();CX.moveTo(95,131);CX.lineTo(95+Math.cos(a)*28,131+Math.sin(a)*9);CX.stroke()}
+  CX.fillStyle='#5a3a1a';CX.fillRect(72,186,18,14);CX.fillRect(100,186,18,14);
+  CX.fillStyle='#f5e6c8';CX.fillRect(80,198,10,12);CX.fillRect(100,198,10,12);
+  CX.fillStyle='#1a0f08';CX.beginPath();CX.roundRect(76,208,20,8,4);CX.fill();CX.beginPath();CX.roundRect(94,208,20,8,4);CX.fill();
+  // Quill
+  CX.save();CX.translate(130,118);CX.rotate(-.5);
+  CX.fillStyle='#f5e6c8';CX.beginPath();CX.moveTo(0,0);CX.lineTo(3,52);CX.lineTo(-3,52);CX.closePath();CX.fill();
+  CX.fillStyle='#4a3520';CX.fillRect(-1,40,2,16);
+  CX.restore();
+  CX.strokeStyle='#fee7d6';CX.lineWidth=6;
+  CX.beginPath();CX.moveTo(126,142);CX.quadraticCurveTo(134,130,130,124);CX.stroke();
+  CX.strokeStyle='#fee7d6';CX.lineWidth=6;
+  CX.beginPath();CX.moveTo(64,144);CX.quadraticCurveTo(48,150,42,164);CX.stroke();
+  // Ink pot
+  CX.fillStyle='#1a1a2e';CX.beginPath();CX.roundRect(36,164,18,16,4);CX.fill();
+  CX.fillStyle='#0a0a1e';CX.beginPath();CX.arc(45,168,6,0,Math.PI*2);CX.fill();
+  sdHead(95,96,38);
+  CX.fillStyle='#4a3520';CX.beginPath();CX.arc(95,66,30,Math.PI,Math.PI*2);CX.fill();
+  CX.fillRect(68,62,54,18);CX.fillRect(66,78,16,22);CX.fillRect(108,78,16,22);
+  CX.fillStyle='#fee7d6';CX.beginPath();CX.arc(95,66,16,0,Math.PI*2);CX.fill();
+  // Mustache + goatee
+  CX.fillStyle='#4a3520';CX.beginPath();CX.ellipse(84,112,7,3.5,-.15,0,Math.PI*2);CX.fill();
+  CX.beginPath();CX.ellipse(106,112,7,3.5,.15,0,Math.PI*2);CX.fill();
+  CX.beginPath();CX.ellipse(95,122,8,11,0,0,Math.PI*2);CX.fill();
+  sdEyes(80,94,9,e);sdEyes(110,94,9,e);
+  CX.strokeStyle='#4a3520';CX.lineWidth=2;CX.beginPath();CX.moveTo(70,82);CX.lineTo(88,80);CX.stroke();
+  CX.beginPath();CX.moveTo(120,82);CX.lineTo(102,80);CX.stroke();
+  sdBlush(72,108);sdBlush(118,108);
+  sdMouth(95,114,e);
+}
+
+function drawSMature(e){
+  drawSAdult(e);
+  CX.strokeStyle='#2c5f2d';CX.lineWidth=2.5;
+  CX.beginPath();CX.arc(95,52,24,Math.PI+.3,Math.PI*2-.3);CX.stroke();
+  CX.fillStyle='#3a7d3a';
+  for(let i=0;i<6;i++){const a=Math.PI+.4+(i/5)*(Math.PI-.8);const lx=95+Math.cos(a)*24,ly=52+Math.sin(a)*24;CX.save();CX.translate(lx,ly);CX.rotate(a+.5);CX.beginPath();CX.ellipse(0,0,6,3,0,0,Math.PI*2);CX.fill();CX.restore()}
+  CX.fillStyle='rgba(200,200,200,.18)';CX.beginPath();CX.arc(95,66,28,Math.PI,Math.PI*2);CX.fill();
+  CX.fillStyle='rgba(255,215,0,.04)';CX.beginPath();CX.arc(95,110,52,0,Math.PI*2);CX.fill();
+  // Scroll
+  CX.fillStyle='#f5e6c8';CX.beginPath();CX.roundRect(32,154,20,46,4);CX.fill();
+  CX.strokeStyle='#c9b89a';CX.lineWidth=1;CX.beginPath();CX.roundRect(32,154,20,46,4);CX.stroke();
+  CX.fillStyle='#f5e6c8';CX.beginPath();CX.ellipse(42,154,10,5,0,0,Math.PI*2);CX.fill();CX.stroke();
+  CX.beginPath();CX.ellipse(42,200,10,5,0,0,Math.PI*2);CX.fill();CX.stroke();
+  CX.fillStyle='#8B0000';CX.beginPath();CX.arc(42,178,4.5,0,Math.PI*2);CX.fill();
+  CX.strokeStyle='#fee7d6';CX.lineWidth=6;
+  CX.beginPath();CX.moveTo(64,144);CX.quadraticCurveTo(48,150,42,160);CX.stroke();
+}
+
+function drawSLegend(e){
+  drawSAdult(e);
+  const g=CX.createRadialGradient(95,100,10,95,100,70);
+  g.addColorStop(0,'rgba(255,215,0,.1)');g.addColorStop(.5,'rgba(255,215,0,.03)');g.addColorStop(1,'rgba(255,215,0,0)');
+  CX.fillStyle=g;CX.beginPath();CX.arc(95,100,70,0,Math.PI*2);CX.fill();
+  for(let i=0;i<7;i++){
+    const a=i/7*Math.PI*2-Math.PI/2,sx=95+Math.cos(a)*28,sy=64+Math.sin(a)*28;
+    CX.fillStyle='#FFD700';CX.shadowColor='#FFD700';CX.shadowBlur=10;const sz=3.5;
+    CX.beginPath();
+    for(let j=0;j<5;j++){const sa=j*4*Math.PI/5-Math.PI/2,px=sx+Math.cos(sa)*sz,py=sy+Math.sin(sa)*sz;j===0?CX.moveTo(px,py):CX.lineTo(px,py)}
+    CX.closePath();CX.fill();CX.shadowBlur=0;
+  }
+  // Float quills
+  const t=Date.now()*.0005;
+  CX.fillStyle='rgba(245,245,220,.15)';
+  for(let i=0;i<3;i++){const a=i/3*Math.PI*2+t,d=42+Math.sin(t*1.5+i)*8;const qx=95+Math.cos(a)*d,qy=108+Math.sin(a)*d*.6;CX.save();CX.translate(qx,qy);CX.rotate(a+.3);CX.beginPath();CX.moveTo(0,0);CX.lineTo(2,18);CX.lineTo(-2,18);CX.closePath();CX.fill();CX.restore()}
+}
+
+// ============================================================
+// MAIN GAME
+// ============================================================
+function startGame(){
+  GS={stage:0,fame:0,love:0,wealth:0,wisdom:0,choices:[],completed:false,unlocked:0,started:true,expression:'happy',unlockedChars:[]};
+  document.getElementById('startBtn').style.display='none';
+  buildDots();showScene(0);updStats();updTL();
+}
+
+function restartGame(){
+  if(!GS.started)return;
+  GS={stage:0,fame:0,love:0,wealth:0,wisdom:0,choices:[],completed:false,unlocked:0,started:false,expression:'happy',unlockedChars:[]};
+  achievements=new Set();
+  document.getElementById('startBtn').style.display='flex';
+  document.getElementById('startBtn').innerHTML='<span class="ci">&#127917;</span><span class="choice-label">重新开始传奇！</span>';
+  const ca=document.getElementById('choicesArea');ca.innerHTML='';ca.appendChild(document.getElementById('startBtn'));
+  setSpeech('&#128260; 命运之声','游戏已重置。点击按钮再次启程！');
+  setNarr('一切归零，新的故事等你书写……');
+  document.getElementById('nameTag').innerHTML='&#127916; 威廉·莎士比亚';
+  updStats();updTL();buildDots();drawChar(0,'happy');buildWorld();
+}
+
+function showScene(idx){
+  if(idx>=SCENARIOS.length){showEnd();return}
+  GS.stage=idx;const sc=SCENARIOS[idx];
+  drawChar(idx,'happy');document.getElementById('nameTag').innerHTML='&#127916; '+STAGES[idx].label;
+  setSpeech(sc.speaker,sc.text);setNarr(sc.narrative);
+  document.querySelectorAll('.s-dot').forEach((d,i)=>{d.classList.toggle('active',i===idx);d.classList.toggle('past',i<idx)});
+  const ca=document.getElementById('choicesArea');ca.innerHTML='';
+  sc.choices.forEach((ch,i)=>{
+    const b=document.createElement('button');b.className='choice-btn';b.style.animationDelay=i*.06+'s';
+    b.innerHTML=`<span class="ci">${ch.icon}</span><span class="choice-label">${ch.label}</span><span class="ce"><span class="eg">${ch.effect}</span></span>`;
+    b.onclick=()=>makeChoice(idx,i);ca.appendChild(b);
+  });
+  updTL();
+  if(idx>GS.unlocked){GS.unlocked=idx;unlock('&#127775;',STAGES[idx].label,'到达了'+STAGES[idx].year)}
+  buildWorld();
+}
+
+function makeChoice(si,ci){
+  const sc=SCENARIOS[si],ch=sc.choices[ci];
+  GS.choices.push({stage:si,choice:ci,label:ch.label});
+  GS[ch.stat]+=ch.val;if(ch.stat2)GS[ch.stat2]+=ch.val2;
+  animateStat(ch.stat);if(ch.stat2)animateStat(ch.stat2);updStats();
+  drawChar(si,ch.val>=3?'happy':'surprised');
+  // Unlock character
+  if(ch.unlock&&!GS.unlockedChars.includes(ch.unlock)){
+    GS.unlockedChars.push(ch.unlock);
+    const wc=WORLD_CHARS.find(c=>c.id===ch.unlock);
+    if(wc)unlock('&#127758;',wc.name,'已在莎翁世界中解锁！');
+    buildWorld();
+  }
+  const react=getReact(si,ci);
+  setSpeech('&#127775; 命运之声',react.speech);setNarr(react.narr);
+  const ca=document.getElementById('choicesArea');
+  ca.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  const cb=document.createElement('button');cb.className='choice-btn';
+  cb.innerHTML='<span class="ci">&#10132;</span><span class="choice-label">继续旅程……</span>';
+  cb.onclick=()=>{const n=si+1;n>=SCENARIOS.length?showEnd():showScene(n)};ca.appendChild(cb);
+}
+
+function getReact(stage,choice){
+  const r={
+    0:[{speech:'小威廉露出天使般的笑容，小手在空中挥舞。',narr:'这个孩子天生对世界充满好奇。他的眼睛里闪烁着智慧的光芒，仿佛已经看到了未来的舞台。'},
+       {speech:'小威廉咯咯笑着，声音响亮清脆。邻居们都说："这孩子将来一定不得了！"',narr:'这个孩子有着天生的表达欲。他的每一声啼哭都像是在朗诵诗句。'},
+       {speech:'小威廉安静地躺在摇篮里，感受着温暖的怀抱。',narr:'爱是最好的养分。这份温暖将伴随他一生，成为他笔下所有温柔角色的原型。'}],
+    1:[{speech:'你认真背诵拉丁文，老师投来赞许的目光。',narr:'日复一日的学习让你积累了深厚的古典文学素养。奥维德、维吉尔——这些名字将成为你日后创作的灵感源泉。'},
+       {speech:'你在羊皮纸上悄悄写下人生第一首诗，心中涌起一阵奇妙的悸动。',narr:'文字在你的笔下有了生命。虽然只是几行稚嫩的诗句，但写作的种子已经深深埋下。'},
+       {speech:'你和同学们在院子里即兴表演，引得大家哈哈大笑。',narr:'你天生属于舞台！连路过的校长都忍不住驻足。戏剧的种子已经种下，总有一天会开出最美的花。'}],
+    2:[{speech:'"我愿意。"安妮眼中闪着泪光。你们紧紧相拥。',narr:'1582年11月，18岁的你与26岁的安妮·海瑟薇结婚。三个孩子相继降生——苏珊娜，双胞胎哈姆内特和朱迪思。'},
+       {speech:'你跟着父亲学习生意，手上的茧越来越厚。',narr:'你学会了精打细算。这段经历让你日后在伦敦既能写剧本，也会经营剧团。'},
+       {speech:'你背起行囊，回头望了一眼斯特拉特福的炊烟，走向了伦敦。',narr:'伦敦——那座充满机遇与危险的城市。那里，才是你真正的舞台。'}],
+    3:[{speech:'"生存还是毁灭——"你放下鹅毛笔，长长地舒了一口气。',narr:'《哈姆雷特》完成了！"To be,or not to be"将震撼一代又一代的观众。'},
+       {speech:'你写下"真爱之路从来不是平坦的"，然后忍不住笑了起来。',narr:'《仲夏夜之梦》充满了魔法与欢笑。观众笑得前仰后合，剧场里充满了欢乐。'},
+       {speech:'"再冲一次缺口！"你写下这句台词时热血沸腾。',narr:'《亨利五世》大获成功！国王与平民同甘共苦的精神让所有人动容。你的声望和财富达到新高。'}],
+    4:[{speech:'你在书房里来回踱步，墨水沾满了手指。悲怆的台词如泉水般涌出。',narr:'失去儿子的痛苦化作了李尔王在暴风雨中的呐喊，化作了麦克白沾满鲜血的双手。最深的痛苦催生了最伟大的艺术。'},
+       {speech:'你回到了斯特拉特福，推开"新居"的大门。女儿苏珊娜在花园里等你。',narr:'经历了伦敦的喧嚣和丧子之痛，家的温暖是最好的良药。你开始明白：真正的财富不是掌声，而是家人脸上的笑容。'},
+       {speech:'你写下了"我们都是梦中的人物，我们的一生是在酣睡之中"。',narr:'《暴风雨》《冬天的故事》——这些传奇剧充满了宽恕与和解。无论经历多少风暴，最终都会迎来平静。'}],
+    5:[{speech:'你的名字将如星辰般永远闪耀在文学的星空中。',narr:'你被安葬在斯特拉特福的圣三一教堂。1623年，《第一对开本》出版，36部剧本永垂不朽。'},
+       {speech:'你的作品中流淌着对人性最温柔的注视。',narr:'你创造了1700多个英语单词，你的台词成为日常用语的一部分。你的语言融入了世界的血液。'},
+       {speech:'你成功地将艺术与商业结合，成为了最富有的剧作家之一。',narr:'你拥有斯特拉特福最大的宅邸"新居"，还投资了107英亩土地。诗人也可以活得很好！'}]
+  };
+  return (r[stage]&&r[stage][choice])||{speech:'命运之轮继续转动……',narr:'人生由无数选择组成，每一个都塑造了独一无二的你。'};
+}
+
+function showEnd(){
+  GS.completed=true;
+  const {fame:f,love:l,wealth:w,wisdom:wi}=GS;
+  let endT='&#127942; 你的传奇',endD='你走完了莎士比亚的一生。';
+  if(f>=6)endT='&#127775; 不朽的吟游诗人';else if(l>=6)endT='&#128153; 爱的诗人';else if(wi>=6)endT='&#128214; 智慧的先哲';
+  else if(f>=4&&l>=4)endT='&#127916; 完美戏剧家';else endT='&#127968; 平凡的幸福';
+  const ft=ENDING_TEXTS.fame[f>=6?0:f>=3?1:2],lt=ENDING_TEXTS.love[l>=6?0:l>=3?1:2],wt=ENDING_TEXTS.wealth[w>=6?0:w>=3?1:2],wit=ENDING_TEXTS.wisdom[wi>=6?0:wi>=3?1:2];
+  setSpeech('&#128329; 时光回响','"我们的短暂一生，不过是一场酣睡之后的梦……"<br>你的故事已经写完，但传奇永不落幕。');
+  setNarr(`<span class="hl">${endT}</span><br><br>${ft}<br><br>${lt}<br><br>${wt}<br><br>${wit}`);
+  const ca=document.getElementById('choicesArea');
+  ca.innerHTML=`<div style="text-align:center;padding:10px;background:rgba(240,214,138,.04);border-radius:10px;border:1px solid rgba(240,214,138,.06);"><div style="font-size:1em;color:var(--accent)">${endT}</div><div style="font-size:.7em;color:var(--text2);margin-top:3px">声望${f}|情感${l}|财富${w}|智慧${wi}</div></div>`;
+  const rb=document.createElement('button');rb.className='choice-btn';
+  rb.innerHTML='<span class="ci">&#128260;</span><span class="choice-label">重新书写传奇！</span>';
+  rb.onclick=restartGame;ca.appendChild(rb);
+  drawChar(5,'happy');document.getElementById('nameTag').innerHTML='&#128329; 不朽的吟游诗人';
+  unlock('&#127942;','完成旅程','你完整地经历了莎士比亚的一生！');
+  ['fame','love','wealth','wisdom'].forEach(s=>animateStat(s));
+}
+
+// ===== UI HELPERS =====
+function setSpeech(spk,txt){document.getElementById('spk').innerHTML=spk;document.getElementById('spTxt').innerHTML=txt.replace(/\n/g,'<br>')}
+function setNarr(h){document.getElementById('narrBox').innerHTML=h}
+function updStats(){['fame','love','wealth','wisdom'].forEach(s=>document.getElementById('v'+s.charAt(0).toUpperCase()+s.slice(1)).textContent=GS[s])}
+function animateStat(s){const el=document.getElementById('s'+s.charAt(0).toUpperCase()+s.slice(1));if(el){el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),600)}}
+function buildDots(){document.getElementById('sDots').innerHTML=STAGES.map((s,i)=>`<div class="s-dot${i===0?' active':''}" onclick="showScene(${i})" title="${s.year}"></div>`).join('')}
+function updTL(){document.getElementById('tl').innerHTML=STAGES.map((s,i)=>{const u=i<=GS.unlocked||GS.completed,c=i===GS.stage;return `<div class="tl-i${u?c?' current':' unlocked':''}" onclick="showScene(${i})"><div class="tld"></div><div class="tly">${s.year}</div><div class="tlt">${s.label}${GS.choices.find(c=>c.stage===i)?' &#10003;':''}</div></div>`}).join('')}
+function unlock(icon,title,desc){if(achievements.has(title))return;achievements.add(title);const t=document.getElementById('achToast');document.getElementById('achIcon').innerHTML=icon;document.getElementById('achTitle').innerHTML='成就解锁：'+title;document.getElementById('achDesc').innerHTML=desc;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500)}
+
+// ===== CLICK CHARACTER =====
+const CLICK_LINES = [
+  '"生存还是毁灭，这是一个值得考虑的问题……"','"整个世界是一个舞台，所有男男女女不过是演员而已。"',
+  '"玫瑰不叫玫瑰，依然芳香如故。"','"真爱之路从来不是平坦的。"','"简洁是智慧的灵魂。"',
+  '"对你自己忠实。"','"闪光的并不都是金子。"','"戴王冠的头，是不得安宁的。"',
+  '"我们都是梦中的人物。"','"如果音乐是爱情的食粮，请继续演奏。"'
+];
+let cli=0;
+function clickChar(){
+  const line=CLICK_LINES[cli%CLICK_LINES.length];cli++;
+  const expr=['happy','surprised','thinking','wow','happy'][Math.floor(Math.random()*5)];
+  drawChar(GS.stage,expr);
+  setSpeech('&#128172; 莎士比亚',line);
+  setTimeout(()=>{if(GS.started&&!GS.completed){const sc=SCENARIOS[GS.stage];if(sc)setSpeech(sc.speaker,sc.text)}drawChar(GS.stage,'happy')},2500);
+}
+
+// ============================================================
+// SHAKESPEARE WORLD
+// ============================================================
+function buildWorld(){
+  const g=document.getElementById('worldGrid');
+  g.innerHTML=WORLD_CHARS.map(c=>{
+    const unlocked=GS.unlockedChars.includes(c.id);
+    return `<div class="world-card${unlocked?'':' locked'}" onclick="${unlocked?'this.classList.toggle(\'expanded\')':''}">
+      <span class="w-avatar">${c.emoji}</span>
+      <div class="w-name">${unlocked?c.name:'???'}</div>
+      <div class="w-title">${unlocked?c.title:'???'}</div>
+      ${unlocked?`<span class="w-rel ${c.rel}">${{family:'家人',friend:'友人',rival:'对手',patron:'赞助者',mystery:'谜'}[c.rel]||''}</span>
+      <div class="w-dialog">${c.dialog}</div><div class="w-bio">${c.bio}<br><br><em>解锁条件：${c.unlock}</em></div>`:`<span style="font-size:.55em;color:var(--text2);margin-top:4px;display:block">&#128274; 在人生之旅中解锁</span>`}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// MINI-GAMES
+// ============================================================
+function setupMG(){
+  const hub=document.getElementById('mgHub');
+  hub.innerHTML=[{id:'hamlet',icon:'&#128557;',title:'哈姆雷特的抉择',desc:'代入哈姆雷特做出关键决定'},
+    {id:'memory',icon:'&#128152;',title:'恋人对对碰',desc:'翻开卡片为莎翁恋人牵线'},
+    {id:'quote',icon:'&#128172;',title:'名言拼图',desc:'拼出莎翁经典名句'},
+    {id:'sonnet',icon:'&#128214;',title:'十四行诗填空',desc:'填入莎翁十四行诗的缺失单词'},
+    {id:'wordinventor',icon:'&#128161;',title:'单词发明家',desc:'猜猜莎士比亚发明了哪些单词'},
+      {id:'quotesprint',icon:'&#127919;',title:'台词速配',desc:'快速匹配名句出自哪部剧'},
+      {id:'chrono',icon:'&#128197;',title:'年代排序',desc:'判断哪部作品写得更早'},
+      {id:'genre',icon:'&#127917;',title:'悲喜辨识',desc:'判断剧情属于悲剧还是喜剧'},
+      {id:'whoami',icon:'&#129473;',title:'人物猜谜',desc:'根据线索猜莎翁角色'},
+      {id:'factcheck',icon:'&#128300;',title:'真相检验',desc:'冷知识真伪大挑战'},
+      {id:'famous',icon:'&#128221;',title:'真假名言',desc:'辨认真假莎士比亚名言'},
+      {id:'playmatch',icon:'&#128104;',title:'角色归属',desc:'把角色送回正确的剧目'},
+      {id:'glossary',icon:'&#128218;',title:'戏剧术语',desc:'猜猜戏剧术语的含义'},
+      {id:'rhyme',icon:'&#127921;',title:'十四行诗',desc:'补全十四行诗的韵脚'},
+      {id:'boxoffice',icon:'&#128178;',title:'票房风云',desc:'猜猜哪部剧更受欢迎'},
+      {id:'anagram',icon:'&#128270;',title:'字母解密',desc:'字母重组猜莎翁剧名'}]
+    .map(m=>`<div class="mg-card" onclick="openMG('${m.id}')"><div class="mg-icon">${m.icon}</div><div class="mg-title">${m.title}</div><div class="mg-desc">${m.desc}</div></div>`).join('');
+}
+
+function openMG(id){
+  const cont=document.getElementById('mgContent');
+  if(id==='hamlet')initHamlet(cont);
+  else if(id==='memory')initMemory(cont);
+  else if(id==='quote')initQuote(cont);
+  else if(id==='sonnet')initSonnet(cont);
+  else if(id==='wordinventor')initWordInventor(cont);
+  else if(id==='quotesprint')initQuoteSprint(cont);
+  else if(id==='chrono')initChrono(cont);
+  else if(id==='genre')initGenre(cont);
+  else if(id==='whoami')initWhoami(cont);
+  else if(id==='factcheck')initFactcheck(cont);
+  else if(id==='famous')initFamous(cont);
+  else if(id==='playmatch')initPlaymatch(cont);
+  else if(id==='glossary')initGlossary(cont);
+  else if(id==='rhyme')initRhyme(cont);
+  else if(id==='boxoffice')initBoxoffice(cont);
+  else if(id==='anagram')initAnagram(cont);
+}
+
+// Hamlet
+const HSCENES = [
+  {spk:'&#128081; 克劳狄斯',txt:'哈姆雷特，我的侄儿——不，我的儿子。你为何 still 穿着丧服？',choices:[{l:'"我不是他的儿子。我是我父亲的儿子。"',n:1,r:'克劳狄斯面色阴沉。你感到了宫廷的敌意。',t:'bad'},{l:'"我会努力适应，陛下。"',n:2,r:'你选择了隐忍。但心中的怒火并未熄灭。',t:'neutral'},{l:'"我对您没有话说。"',n:3,r:'全场鸦雀无声。你用冷笑话刺痛了国王。',t:'good'}]},
+  {spk:'&#128123; 鬼魂',txt:'我是你父亲的灵魂……被我的弟弟残忍谋杀了。为我复仇！',choices:[{l:'"我一定复仇！父亲！"',n:4,r:'你满腔怒火。复仇的种子在心中生根。',t:'good'},{l:'"这真是父亲吗？还是恶魔的伪装？"',n:5,r:'你谨慎理性，决定先求证再行动。',t:'neutral'},{l:'"我要装疯，让敌人放松警惕。"',n:4,r:'你决定装作疯癫！经典的战略。',t:'good'}]},
+  {spk:'&#128172; 波罗涅斯',txt:'殿下，王后要见您。',choices:[{l:'"去吧。把真相摊在母亲面前。"',n:5,r:'你误杀了帘后的波罗涅斯。悲剧开始了。',t:'bad'},{l:'"等等……我需要先想清楚。"',n:4,r:'你犹豫了。错失了时机。',t:'neutral'}]},
+  {spk:'&#128152; 奥菲莉亚',txt:'哈姆雷特，你的信……你的誓言……你还爱我吗？',choices:[{l:'（狠心）"我不曾爱过你。"',n:5,r:'你推开了她。奥菲莉亚绝望了。',t:'bad'},{l:'"我爱过你。但不是现在。"',n:4,r:'你承认了爱意，却无法停留。',t:'neutral'},{l:'（沉默）"进修道院去吧。"',n:5,r:'你的话刺穿了她的心。',t:'bad'}]},
+  {spk:'&#127916; 决斗场',txt:'雷欧提斯的剑没有包皮——毒剑！',choices:[{l:'夺过他的剑！',n:6,r:'你敏捷地夺过毒剑刺中雷欧提斯，他临终指认了国王！',t:'good'},{l:'揭露国王的阴谋！',n:6,r:'你大声控诉！所有人的目光转向国王。',t:'neutral'},{l:'不管了，先刺一剑！',n:6,r:'你鲁莽地冲上去，被毒剑划伤。',t:'bad'}]},
+  {spk:'&#128329; 终幕',txt:'',choices:[]}
+];
+const HENDS={good:'你成功复仇，揭露了真相。哈姆雷特虽逝，但他的精神永存。',neutral:'你完成了复仇，但付出了沉重的代价。',bad:'你的犹豫和冲动导致了悲剧，所有人成为了牺牲品。'};
+
+function initHamlet(cont){
+  let st={scene:0,good:0,bad:0,neutral:0,ended:false};
+  cont.innerHTML=`<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="hcArea"></div>`;
+  function show(){
+    const a=document.getElementById('hcArea');if(!a)return;
+    if(st.ended||st.scene>=HSCENES.length-1){
+      const t=st.good>st.bad?'good':st.bad>st.good?'bad':'neutral';
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128329; 结局</div><div class="hc-text">${HENDS[t]}</div><div style="margin-top:8px;font-size:.7em;color:var(--text2)">善行${st.good}|中庸${st.neutral}|鲁莽${st.bad}</div></div>`;
+      unlock('&#128557;','哈姆雷特的抉择','体验了莎翁最著名的悲剧！');return;
+    }
+    const s=HSCENES[st.scene];
+    let h=`<div class="hc-scene"><div class="hc-title">${s.spk}</div><div class="hc-text">${s.txt}</div></div><div style="margin:6px 0">`;
+    s.choices.forEach((c,i)=>{h+=`<button class="hc-choice" onclick="(function(){const a=document.getElementById('hcArea');if(!a)return;document.querySelectorAll('.hc-choice').forEach(b=>b.disabled=true);st.${c.t}++;const r=document.getElementById('hcResult');if(r)r.innerHTML='<div class=\\"hc-result show ${c.t}\\">${c.r}</div>';st.scene=${c.n};setTimeout(()=>show(),1800)})()">${c.l}</button>`});
+    h+=`</div><div id="hcResult"></div>`;a.innerHTML=h;
+  }
+  show();
+  // Store state in DOM for closure access
+  window.__hSt=st;window.__hShow=show;
+}
+
+// Memory
+function initMemory(cont){
+  const pairs=[{a:'&#128105;罗密欧',b:'&#128103;朱丽叶'},{a:'&#128104;哈姆雷特',b:'&#128105;奥菲莉亚'},{a:'&#128105;奥赛罗',b:'&#128103;苔丝狄蒙娜'},{a:'&#128104;培尼狄克',b:'&#128105;贝特丽丝'},{a:'&#128103;鲍西娅',b:'&#128104;巴萨尼奥'},{a:'&#128104;麦克白',b:'&#128105;麦克白夫人'},{a:'&#128104;安东尼',b:'&#128105;克莉奥佩特拉'},{a:'&#128105;米兰达',b:'&#128104;腓迪南'}];
+  const cards=pairs.sort(()=>Math.random()-.5).slice(0,4).flatMap((p,i)=>[{id:i*2,p:i,t:p.a,f:false,m:false},{id:i*2+1,p:i,t:p.b,f:false,m:false}]).sort(()=>Math.random()-.5);
+  let fl=[],locked=false,matched=0,tries=0;
+  cont.innerHTML=`<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div class="mm-grid" id="mmG"></div><div class="mm-score">尝试<span id="mmT">0</span>|配对<span id="mmM">0</span>/4</div>`;
+  function rndr(){const g=document.getElementById('mmG');if(!g)return;g.innerHTML=cards.map(c=>`<div class="mm-card${c.f?' flipped':''}${c.m?' matched':''}" onclick="${c.m||c.f||locked?'':`(function(){if(locked)return;c.f=true;fl.push(c);rndr();if(fl.length===2){locked=true;tries++;document.getElementById('mmT').textContent=tries;const[a,b]=fl;if(a.p===b.p){a.m=true;b.m=true;matched++;document.getElementById('mmM').textContent=matched;fl=[];locked=false;if(matched===4)unlock('&#128152;','恋人对对碰','为莎翁恋人牵线成功！');rndr()}else{setTimeout(()=>{a.f=false;b.f=false;fl=[];locked=false;rndr()},800)}}})()`}"><span style="${c.f||c.m?'display:none':''}">&#128214;</span><span style="${c.f||c.m?'':'display:none'}">${c.t}</span></div>`).join('')}
+  rndr();
+}
+
+// Quote
+function initQuote(cont){
+  const puzzles=[
+    {q:'To be, or not to be: that is the question',s:'《哈姆雷特》'},
+    {q:'All the world\'s a stage, and all the men and women merely players',s:'《皆大欢喜》'},
+    {q:'The course of true love never did run smooth',s:'《仲夏夜之梦》'},
+    {q:'If music be the food of love, play on',s:'《第十二夜》'},
+    {q:'Love all, trust a few, do wrong to none',s:'《皆大欢喜》'},
+    {q:'What\'s in a name? That which we call a rose by any other name would smell as sweet',s:'《罗密欧与朱丽叶》'}];
+  const puz=puzzles[Math.floor(Math.random()*puzzles.length)];
+  let words=puz.q.split(' ').sort(()=>Math.random()-.5);
+  let slots=new Array(words.length).fill(null),complete=false;
+  function rndr(){
+    const c=document.getElementById('qc');if(!c)return;
+    c.innerHTML=`<div class="qb-hint">&#128172; 点击单词放入空格，点击空格取回</div>
+      <div class="qb-words">${words.map((w,i)=>`<span class="qb-word${slots.includes(i)?' placed':''}" onclick="${complete?'':`(function(){if(complete)return;if(slots.includes(${i}))return;const e=slots.indexOf(null);if(e===-1)return;slots[e]=${i};rndr()})()`}">${w}</span>`).join('')}</div>
+      <div class="qb-slots">${slots.map((wi,i)=>wi!==null?`<span class="qb-slot filled" onclick="${complete?'':`(function(){slots[${i}]=null;rndr()})()`}">${words[wi]}</span>`:`<span class="qb-slot">${i+1}</span>`).join('')}</div>
+      <div class="qb-source">——${puz.s}</div>
+      <button class="qb-btn" onclick="${complete?'':`(function(){if(complete)return;if(slots.includes(null)){document.querySelector('.qb-source').textContent='⚠️ 请填满所有空格';return}const u=slots.map(i=>words[i]).join(' ');if(u==='${puz.q.replace(/'/g,"\\'")}'){document.querySelector('.qb-source').textContent='✅ 完全正确！——${puz.s}';document.querySelectorAll('.qb-slot').forEach(e=>e.classList.add('correct'));complete=true;unlock('&#128172;','名言拼图','成功拼出莎翁名句！')}else{document.querySelector('.qb-source').textContent='❌ 再试一次...';document.querySelectorAll('.qb-word').forEach(e=>e.classList.remove('placed'));slots=new Array(${words.length}).fill(null);rndr()}})()`}">&#9989; 确认</button>`;
+  }
+  cont.innerHTML=`<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="qc"></div>`;
+  rndr();
+}
+
+// ============================================================
+// NEW MINI-GAMES
+// ============================================================
+const SONNET_Q = [
+  {line:'Shall I ___ thee to a summer\'s day?',opts:['compare','compete','compose','confess'],a:0,src:'十四行诗 第18首'},
+  {line:'Thou art more lovely and more ___',opts:['temperate','terrible','tender','tormented'],a:0,src:'十四行诗 第18首'},
+  {line:'But thy eternal summer shall not ___',opts:['fade','fail','fear','fall'],a:0,src:'十四行诗 第18首'},
+  {line:'Love alters not with his brief hours and ___',opts:['weeks','days','months','years'],a:0,src:'十四行诗 第116首'},
+  {line:'Let me not to the marriage of true minds / Admit ___',opts:['impediments','implements','instruments','improvements'],a:0,src:'十四行诗 第116首'},
+  {line:'Love\'s not Time\'s fool, though rosy lips and ___',opts:['cheeks','hands','eyes','locks'],a:0,src:'十四行诗 第116首'},
+  {line:'My mistress\' eyes are nothing like the ___',opts:['sun','moon','stars','sky'],a:0,src:'十四行诗 第130首'},
+  {line:'If snow be white, why then her breasts are ___',opts:['dun','dull','dark','dear'],a:0,src:'十四行诗 第130首'},
+  {line:'And yet, by heaven, I think my love as ___',opts:['rare','rich','real','fair'],a:0,src:'十四行诗 第130首'},
+  {line:'So long as men can breathe or eyes can ___',opts:['see','sing','sleep','speak'],a:0,src:'十四行诗 第18首'},
+];
+const WORD_Q = [
+  {w:'bedroom',opts:['卧室','书房','客厅','花园'],a:0},
+  {w:'eyeball',opts:['眼球','眉毛','睫毛','眼皮'],a:0},
+  {w:'swagger',opts:['大摇大摆地走','飞快地跑','安静地站','优雅地坐'],a:0},
+  {w:'gossip',opts:['闲话/八卦','拥抱','跳舞','歌唱'],a:0},
+  {w:'lonely',opts:['孤独的','快乐的','忙碌的','勇敢的'],a:0},
+  {w:'rant',opts:['咆哮/怒吼','低语','哭泣','微笑'],a:0},
+  {w:'hint',opts:['暗示/提示','命令','要求','拒绝'],a:0},
+  {w:'dwindle',opts:['逐渐减少','突然增加','保持不变','时好时坏'],a:0},
+  {w:'heartache',opts:['心痛','头痛','牙痛','胃痛'],a:0},
+  {w:'majestic',opts:['雄伟的','渺小的','可爱的','可怕的'],a:0},
+  {w:'radiance',opts:['光辉/灿烂','阴影','回声','重量'],a:0},
+  {w:'lackluster',opts:['暗淡无光的','闪闪发光的','色彩斑斓的','温暖舒适的'],a:0},
+];
+const QUICK_Q = [
+  {q:'"To be, or not to be: that is the question."',opts:['《哈姆雷特》','《麦克白》','《李尔王》','《暴风雨》'],a:0},
+  {q:'"All the world\'s a stage, and all the men and women merely players."',opts:['《皆大欢喜》','《第十二夜》','《仲夏夜之梦》','《威尼斯商人》'],a:0},
+  {q:'"What\'s in a name? That which we call a rose by any other name would smell as sweet."',opts:['《罗密欧与朱丽叶》','《奥赛罗》','《无事生非》','《安东尼与克莉奥佩特拉》'],a:0},
+  {q:'"Love looks not with the eyes, but with the mind."',opts:['《仲夏夜之梦》','《皆大欢喜》','《第十二夜》','《暴风雨》'],a:0},
+  {q:'"If music be the food of love, play on."',opts:['《第十二夜》','《仲夏夜之梦》','《威尼斯商人》','《无事生非》'],a:0},
+  {q:'"Brevity is the soul of wit."',opts:['《哈姆雷特》','《理查三世》','《麦克白》','《李尔王》'],a:0},
+  {q:'"All that glitters is not gold."',opts:['《威尼斯商人》','《雅典的泰门》','《暴风雨》','《冬天的故事》'],a:0},
+  {q:'"Now is the winter of our discontent."',opts:['《理查三世》','《亨利四世》','《亨利五世》','《约翰王》'],a:0},
+  {q:'"Out, damned spot! Out, I say!"',opts:['《麦克白》','《哈姆雷特》','《奥赛罗》','《李尔王》'],a:0},
+  {q:'"Parting is such sweet sorrow."',opts:['《罗密欧与朱丽叶》','《安东尼与克莉奥佩特拉》','《奥赛罗》','《仲夏夜之梦》'],a:0},
+  {q:'"The quality of mercy is not strained."',opts:['《威尼斯商人》','《皆大欢喜》','《一报还一报》','《终成眷属》'],a:0},
+  {q:'"We are such stuff as dreams are made on."',opts:['《暴风雨》','《仲夏夜之梦》','《冬天的故事》','《辛白林》'],a:0},
+  {q:'"Love all, trust a few, do wrong to none."',opts:['《皆大欢喜》','《哈姆雷特》','《李尔王》','《麦克白》'],a:0},
+  {q:'"The fault, dear Brutus, is not in our stars, but in ourselves."',opts:['《凯撒大帝》','《安东尼与克莉奥佩特拉》','《科利奥兰纳斯》','《雅典的泰门》'],a:0},
+  {q:'"Shall I compare thee to a summer\'s day?"',opts:['《十四行诗》第18首','《十四行诗》第116首','《十四行诗》第130首','《爱的徒劳》'],a:0},
+];
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+// Sonnet
+function initSonnet(cont){
+  let idx=0,score=0;const items=shuffle([...SONNET_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="snArea"></div>';
+  const a=document.getElementById('snArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128214; 十四行诗挑战完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128214;','十四行诗大师','完美完成所有填空！');else if(score>=6)unlock('&#128214;','十四行诗学者','你熟悉莎翁的十四行诗！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#127942; 填空 ${idx+1}/${items.length}</div><div class="sn-line">"${q.line}"</div><div class="sn-src">——${q.src}</div></div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="snFB"></div><div class="mg-score-bar">得分：<span id="snS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('snFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('snS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！</div>':'<div class="hc-result show bad">❌ 正确答案：'+ao[ci]+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// Word Inventor
+function initWordInventor(cont){
+  let idx=0,score=0;const items=shuffle([...WORD_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="wiArea"></div>';
+  const a=document.getElementById('wiArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128161; 单词发明家挑战完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128161;','单词发明家','你熟知莎士比亚创造的所有单词！');else if(score>=7)unlock('&#128161;','单词学徒','你学会了不少莎翁发明的单词！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128161; 单词 ${idx+1}/${items.length}</div><div class="wi-word">${q.w}</div><div style="font-size:.6em;color:var(--text2);margin-bottom:6px;text-align:center">莎翁发明的词！猜猜它的意思？</div></div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="wiFB"></div><div class="mg-score-bar">得分：<span id="wiS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('wiFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('wiS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！</div>':'<div class="hc-result show bad">❌ 正确答案：'+ao[ci]+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// Quote Sprint
+function initQuoteSprint(cont){
+  let idx=0,score=0;const items=shuffle([...QUICK_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="qsArea"></div>';
+  const a=document.getElementById('qsArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#127919; 台词速配完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#127919;','台词速配大师','完美匹配所有名句出处！');else if(score>=9)unlock('&#127919;','台词达人','你熟悉莎翁各剧的经典名句！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    const dots=items.map((_,i)=>i<idx?'<span class="qsp-dot done"></span>':i===idx?'<span class="qsp-dot current"></span>':'<span class="qsp-dot"></span>').join('');
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#127919; 速配 ${idx+1}/${items.length}</div><div class="qsp-quote">${q.q}</div><div style="font-size:.6em;color:var(--text2);margin-bottom:6px;text-align:center">出自哪部作品？</div><div class="qsp-progress">${dots}</div></div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="qsFB"></div><div class="mg-score-bar">得分：<span id="qsS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('qsFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('qsS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！</div>':'<div class="hc-result show bad">❌ 正确答案：'+ao[ci]+'</div>';
+      const d=a.querySelector('.qsp-dot.current');if(d)d.className='qsp-dot '+(ok?'done':'wrong');
+      idx++;setTimeout(render,1300);
+    }});
+  }
+}
+
+// ── 10 NEW MINI-GAMES ───────────────────────────────────────
+
+// 1. Chronology ──────────────────────────
+const CHRONO_Q = [
+  {opts:['哈姆雷特','李尔王'],a:0,note:'哈姆雷特(1600)早于李尔王(1605)'},
+  {opts:['仲夏夜之梦','暴风雨'],a:0,note:'仲夏夜之梦(1595)早于暴风雨(1611)'},
+  {opts:['奥赛罗','罗密欧与朱丽叶'],a:1,note:'罗密欧与朱丽叶(1595)早于奥赛罗(1603)'},
+  {opts:['威尼斯商人','麦克白'],a:0,note:'威尼斯商人(1598)早于麦克白(1606)'},
+  {opts:['理查三世','亨利五世'],a:0,note:'理查三世(1592)早于亨利五世(1599)'},
+  {opts:['第十二夜','无事生非'],a:1,note:'无事生非(1598)早于第十二夜(1601)'},
+  {opts:['驯悍记','冬天的故事'],a:0,note:'驯悍记(1593)早于冬天的故事(1610)'},
+  {opts:['错误的喜剧','哈姆雷特'],a:0,note:'错误的喜剧(1592)早于哈姆雷特(1600)'},
+  {opts:['李尔王','暴风雨'],a:0,note:'李尔王(1605)早于暴风雨(1611)'},
+  {opts:['亨利六世上','无事生非'],a:0,note:'亨利六世上(1591)早于无事生非(1598)'},
+];
+function initChrono(cont){
+  let idx=0,score=0;const items=shuffle([...CHRONO_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="chArea"></div>';
+  const a=document.getElementById('chArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128197; 年代排序完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128197;','年代排序大师','精通莎翁创作年表！');else if(score>=8)unlock('&#128197;','年代侦探','你了解莎翁作品年代顺序！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128197; 排序 ${idx+1}/${items.length}</div></div><div style="font-size:.78em;color:var(--gold);text-align:center;padding:4px">${q.opts[0]} vs ${q.opts[1]}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin-bottom:6px">哪一部写得更早？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="chFB"></div><div class="mg-score-bar">得分：<span id="chS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('chFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('chS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ '+q.note+'</div>':'<div class="hc-result show bad">❌ '+q.note+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 2. Genre ────────────────────────────────
+const GENRE_Q = [
+  {q:'一对年轻恋人因家族世仇而双双殉情',opts:['悲剧','喜剧'],a:0,play:'罗密欧与朱丽叶'},
+  {q:'一位老人把财产分给三个女儿，被忘恩负义的女儿逼疯',opts:['悲剧','喜剧'],a:0,play:'李尔王'},
+  {q:'一对双胞胎兄妹因海难失散，引发各种身份错乱的搞笑场面',opts:['悲剧','喜剧'],a:1,play:'错误的喜剧'},
+  {q:'犹太商人设下"一磅肉"毒约，最终被机智的律师化解',opts:['悲剧','喜剧'],a:1,play:'威尼斯商人'},
+  {q:'丹麦王子为父复仇装疯卖傻，最终全部悲剧收场',opts:['悲剧','喜剧'],a:0,play:'哈姆雷特'},
+  {q:'摩尔人将军被旗官挑拨，因嫉妒掐死无辜的妻子',opts:['悲剧','喜剧'],a:0,play:'奥赛罗'},
+  {q:'精灵在森林中为两对恋人施下爱情魔药，闹出无数笑话',opts:['悲剧','喜剧'],a:1,play:'仲夏夜之梦'},
+  {q:'苏格兰大将受女巫诱惑弑君篡位，陷入疯狂与覆灭',opts:['悲剧','喜剧'],a:0,play:'麦克白'},
+];
+function initGenre(cont){
+  let idx=0,score=0;const items=shuffle([...GENRE_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="gnArea"></div>';
+  const a=document.getElementById('gnArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#127917; 悲喜辨识完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#127917;','悲喜鉴别家','一眼辨悲剧喜剧！');else if(score>=7)unlock('&#127917;','戏剧分类员','你熟悉莎翁戏剧类型！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#127917; 辨识 ${idx+1}/${items.length}</div></div><div style="font-size:.74em;color:var(--text);text-align:center;padding:4px 8px;line-height:1.5">${q.q}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin-bottom:6px">这是悲剧还是喜剧？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="gnFB"></div><div class="mg-score-bar">得分：<span id="gnS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('gnFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('gnS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 这是《'+q.play+'》——'+ao[ci]+'</div>':'<div class="hc-result show bad">❌ 这是《'+q.play+'》——'+ao[ci]+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 3. Whoami ───────────────────────────────
+const WHOAMI_Q = [
+  {clues:['我是丹麦王子','我经常穿黑色丧服','我最后为父报仇'],opts:['哈姆雷特','奥赛罗','罗密欧','李尔王'],a:0},
+  {clues:['我是威尼斯摩尔人将军','妻子名叫苔丝狄蒙娜','我轻信了伊阿古的谎言'],opts:['哈姆雷特','奥赛罗','麦克白','凯撒'],a:1},
+  {clues:['我是苏格兰大将','女巫预言我将成王','妻子鼓励我弑君'],opts:['班柯','麦克白','马尔康','邓肯'],a:1},
+  {clues:['我是犹太富翁','女儿被基督徒拐走','我要求割一磅肉报复'],opts:['夏洛克','波西亚','巴萨尼奥','安东尼奥'],a:0},
+  {clues:['我是不列颠老王的女儿','因说真话被父亲驱逐','我最后战死沙场'],opts:['考狄利娅','奥菲利亚','杰西卡','伊摩琴'],a:0},
+  {clues:['我是古罗马独裁官','在元老院被刺杀','义子布鲁图斯参与其中'],opts:['安东尼','凯撒','布鲁图斯','庞培'],a:1},
+  {clues:['我是被害国王的鬼魂','我告诉儿子凶手是谁','我在城堡城墙上出现'],opts:['克劳狄斯','波洛涅斯','老哈姆雷特','霍拉旭'],a:2},
+  {clues:['我是雅典贵族青年','被精灵用魔药捉弄','最后娶了赫米娅'],opts:['狄米特律斯','拉山德','帕克','奥布朗'],a:1},
+];
+function initWhoami(cont){
+  let idx=0,score=0;const items=shuffle([...WHOAMI_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="waArea"></div>';
+  const a=document.getElementById('waArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#129473; 人物猜谜完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#129473;','人物通晓者','认识所有莎翁角色！');else if(score>=7)unlock('&#129473;','角色侦探','你对莎翁角色颇为了解！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#129473; 猜人物 ${idx+1}/${items.length}</div></div>`+
+      q.clues.map((c,i)=>`<div style="font-size:.68em;color:var(--text);text-align:center;margin:2px 0">${i+1}. ${c}</div>`).join('')+
+      `<div style="font-size:.6em;color:var(--text2);text-align:center;margin:4px 0 6px">以上描述的是谁？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="waFB"></div><div class="mg-score-bar">得分：<span id="waS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('waFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('waS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！</div>':'<div class="hc-result show bad">❌ 正确答案：'+ao[ci]+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 4. Factcheck ────────────────────────────
+const FACTCHECK_Q = [
+  {q:'莎士比亚一生从未离开过英格兰',opts:['真','假'],a:0,note:'主流观点认为他一生未离开英格兰'},
+  {q:'莎士比亚的一对子女是双胞胎',opts:['真','假'],a:0,note:'儿子哈姆尼特和女儿朱迪丝确实是双胞胎'},
+  {q:'莎士比亚的所有剧作都是独自完成的',opts:['真','假'],a:1,note:'学者确认《亨利八世》等剧有合作者'},
+  {q:'莎士比亚的生日与忌日是同一个日期',opts:['真','假'],a:0,note:'均为4月23日（儒略历）'},
+  {q:'莎士比亚的女儿苏珊娜是文盲',opts:['真','假'],a:1,note:'她能签名，应具备基础读写能力'},
+  {q:'莎士比亚的剧团后更名为"国王供奉剧团"',opts:['真','假'],a:0,note:'詹姆士一世继位后成为剧团赞助人'},
+  {q:'环球剧场在1613年的演出中被烧毁',opts:['真','假'],a:0,note:'演出中火炮引燃了茅草屋顶'},
+  {q:'莎士比亚的作品中从未提到过大象',opts:['真','假'],a:1,note:'《凯撒大帝》等剧中提及过大象'},
+  {q:'莎士比亚在伦敦的主要职业是商人',opts:['真','假'],a:1,note:'他主要是演员、剧作家和股东'},
+  {q:'莎士比亚把"第二好的床"留给了妻子',opts:['真','假'],a:0,note:'这份遗嘱现存于英国国家档案馆'},
+];
+function initFactcheck(cont){
+  let idx=0,score=0;const items=shuffle([...FACTCHECK_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="fcArea"></div>';
+  const a=document.getElementById('fcArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128300; 真相检验完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128300;','冷知识博士','莎翁冷知识全掌握！');else if(score>=8)unlock('&#128300;','事实核查员','你对莎翁生平了解不少！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128300; 冷知识 ${idx+1}/${items.length}</div></div><div style="font-size:.76em;color:var(--text);text-align:center;padding:6px 8px;line-height:1.5">${q.q}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin-bottom:6px">真还是假？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="fcFB"></div><div class="mg-score-bar">得分：<span id="fcS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('fcFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('fcS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ '+q.note+'</div>':'<div class="hc-result show bad">❌ '+q.note+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 5. Famous ───────────────────────────────
+const FAMOUS_Q = [
+  {q:'"生存还是毁灭，这是一个问题"',a:0,src:'哈姆雷特（真）'},
+  {q:'"生命中最重要的不是成功，而是奋斗"',a:1,src:'现代名言（假）'},
+  {q:'"世界是一个舞台，所有的男男女女不过是演员"',a:0,src:'皆大欢喜（真）'},
+  {q:'"爱情不是用眼睛看，而是用心灵感受"',a:0,src:'仲夏夜之梦（真）'},
+  {q:'"不要因为结束而哭泣，要因它发生过而微笑"',a:1,src:'现代名言（假）'},
+  {q:'"简洁是智慧的灵魂"',a:0,src:'哈姆雷特（真）'},
+  {q:'"走自己的路，让别人说去吧"',a:1,src:'但丁名言（假）'},
+  {q:'"黑夜无论怎样悠长，白昼总会到来"',a:0,src:'麦克白（真）'},
+  {q:'"时间会刺破青春的华美精致"',a:0,src:'十四行诗（真）'},
+  {q:'"命运掌握在自己手中"',a:1,src:'现代名言（假）'},
+];
+function initFamous(cont){
+  let idx=0,score=0;const items=shuffle([...FAMOUS_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="fmArea"></div>';
+  const a=document.getElementById('fmArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128221; 真假名言完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128221;','名言鉴真师','一眼辨别真假名言！');else if(score>=8)unlock('&#128221;','名言侦探','你对莎翁名句了解不少！');
+      return;
+    }
+    const q=items[idx],ao=shuffle(['莎翁原句','后人伪造']),ci=ao.indexOf(q.a?ao[1]:ao[0]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128221; 真假 ${idx+1}/${items.length}</div></div><div style="font-size:.74em;color:var(--gold);text-align:center;padding:6px 8px;line-height:1.5;font-style:italic">${q.q}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin-bottom:6px">这是莎翁原句还是后人伪造？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="fmFB"></div><div class="mg-score-bar">得分：<span id="fmS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('fmFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('fmS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！——'+q.src+'</div>':'<div class="hc-result show bad">❌ '+q.src+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 6. Playmatch ────────────────────────────
+const PLAYMATCH_Q = [
+  {c:'朱丽叶',opts:['哈姆雷特','罗密欧与朱丽叶','李尔王','暴风雨'],a:1},
+  {c:'伊阿古',opts:['奥赛罗','威尼斯商人','麦克白','李尔王'],a:0},
+  {c:'帕克',opts:['第十二夜','皆大欢喜','仲夏夜之梦','暴风雨'],a:2},
+  {c:'夏洛克',opts:['威尼斯商人','哈姆雷特','奥赛罗','驯悍记'],a:0},
+  {c:'奥菲利亚',opts:['李尔王','哈姆雷特','麦克白','罗密欧与朱丽叶'],a:1},
+  {c:'考狄利娅',opts:['奥赛罗','暴风雨','麦克白','李尔王'],a:3},
+  {c:'波西亚',opts:['威尼斯商人','第十二夜','仲夏夜之梦','皆大欢喜'],a:0},
+  {c:'班柯',opts:['哈姆雷特','麦克白','李尔王','亨利五世'],a:1},
+  {c:'凯撒',opts:['安东尼与克莉奥佩特拉','凯撒大帝','科利奥兰纳斯','雅典的泰门'],a:1},
+  {c:'普洛斯彼罗',opts:['暴风雨','仲夏夜之梦','第十二夜','冬天的故事'],a:0},
+];
+function initPlaymatch(cont){
+  let idx=0,score=0;const items=shuffle([...PLAYMATCH_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="pmArea"></div>';
+  const a=document.getElementById('pmArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128104; 角色归属完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128104;','角色归属大师','把所有角色送回正确剧目！');else if(score>=8)unlock('&#128104;','角色管理员','你对莎翁角色归属很熟悉！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128104; 归属 ${idx+1}/${items.length}</div></div><div style="font-size:.9em;color:var(--gold);text-align:center;padding:6px">${q.c}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin-bottom:6px">出自哪部作品？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="pmFB"></div><div class="mg-score-bar">得分：<span id="pmS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('pmFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('pmS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！</div>':'<div class="hc-result show bad">❌ 正确答案：'+ao[ci]+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 7. Glossary ─────────────────────────────
+const GLOSSARY_Q = [
+  {t:'独白',opts:['角色独自说出内心想法','两个角色的对话','幕间休息的表演','剧终谢幕'],a:0},
+  {t:'旁白',opts:['剧中角色不被其他角色听见的台词','幕间休息','角色的死亡场景','观众鼓掌'],a:0},
+  {t:'悲剧',opts:['以死亡和不幸结尾的戏剧','以婚礼结尾的戏剧','讲述历史的戏剧','令人发笑的戏剧'],a:0},
+  {t:'喜剧',opts:['以死亡结尾','以皆大欢喜结尾','历史事件改编','关于神仙的故事'],a:1},
+  {t:'五步抑扬格',opts:['莎翁常用的诗歌韵律','一种舞蹈动作','舞台布景','角色名字'],a:0},
+  {t:'对开本',opts:['大型书籍格式','一种椅子的名称','舞台道具','剧本笔名'],a:0},
+  {t:'环球剧场',opts:['莎翁剧团的演出场所','球形建筑模型','伦敦集市名称','一部戏剧标题'],a:0},
+  {t:'幕',opts:['戏剧的主要段落划分','演员穿的衣服','舞台幕布名称','鼓掌的意思'],a:0},
+];
+function initGlossary(cont){
+  let idx=0,score=0;const items=shuffle([...GLOSSARY_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="glArea"></div>';
+  const a=document.getElementById('glArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128218; 戏剧术语完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128218;','术语百科全书','戏剧术语全掌握！');else if(score>=7)unlock('&#128218;','术语学徒','你对戏剧术语有了初步了解！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128218; 术语 ${idx+1}/${items.length}</div></div><div style="font-size:.9em;color:var(--gold);text-align:center;padding:6px">${q.t}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin-bottom:6px">这个术语是什么意思？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="glFB"></div><div class="mg-score-bar">得分：<span id="glS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('glFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('glS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！</div>':'<div class="hc-result show bad">❌ 正确答案：'+ao[ci]+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 8. Rhyme ────────────────────────────────
+const RHYME_Q = [
+  {line:'我能否把你比作夏日？你却比它更加____。',opts:['明媚','温柔','可爱','动人'],a:2,src:'十四行诗第18首'},
+  {line:'当四十个冬天围攻你的容颜，在你美丽的花园挖下深沟____。',opts:['刻痕','印记','伤痕','皱纹'],a:0,src:'十四行诗第2首'},
+  {line:'我从不认为能与她相比，她漫步时也未见____。',opts:['优雅','迷人','超凡','完美'],a:1,src:'十四行诗第130首'},
+  {line:'只要人类能呼吸，眼睛能看见，这诗就活着，给你____。',opts:['生命','永恒','力量','温暖'],a:0,src:'十四行诗第18首'},
+  {line:'我爱人像红玫瑰，在六月里____。',opts:['盛开','绽放','摇曳','芬芳'],a:1,src:'十四行诗'},
+  {line:'别把时间浪费在无聊叹息，去收获那甜蜜的____。',opts:['果实','爱情','时光','希望'],a:0,src:'十四行诗'},
+  {line:'爱如灯塔般坚定，不畏风暴的____。',opts:['侵袭','咆哮','吹打','袭击'],a:1,src:'十四行诗第116首'},
+  {line:'我将不老的诗句赠你，让青春在文字中永____。',opts:['驻','存','在','生'],a:0,src:'十四行诗'},
+];
+function initRhyme(cont){
+  let idx=0,score=0;const items=shuffle([...RHYME_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="rhArea"></div>';
+  const a=document.getElementById('rhArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#127921; 十四行诗完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#127921;','十四行诗诗人','精通莎翁十四行诗韵律！');else if(score>=7)unlock('&#127921;','韵律学徒','你对十四行诗节奏颇有感觉！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#127921; 诗韵 ${idx+1}/${items.length}</div></div><div style="font-size:.72em;color:var(--gold);text-align:center;padding:6px 8px;line-height:1.6;font-style:italic">${q.line}</div><div style="font-size:.55em;color:var(--text2);text-align:center">——${q.src}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin:4px 0 6px">请选出正确的词填入空白处</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="rhFB"></div><div class="mg-score-bar">得分：<span id="rhS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('rhFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('rhS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！</div>':'<div class="hc-result show bad">❌ 正确答案：'+ao[ci]+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 9. Boxoffice ────────────────────────────
+const BOXOFFICE_Q = [
+  {q:'哈姆雷特 vs 雅典的泰门',opts:['哈姆雷特','雅典的泰门'],a:0,note:'哈姆雷特是莎翁最受欢迎的作品之一'},
+  {q:'罗密欧与朱丽叶 vs 科利奥兰纳斯',opts:['罗密欧与朱丽叶','科利奥兰纳斯'],a:0,note:'罗密欧与朱丽叶是当时最畅销的剧本'},
+  {q:'驯悍记 vs 查理二世',opts:['驯悍记','查理二世'],a:0,note:'驯悍记是当时的热门喜剧'},
+  {q:'泰尔亲王配力克里斯 vs 麦克白',opts:['泰尔亲王配力克里斯','麦克白'],a:0,note:'配力克里斯在当时意外地比麦克白更卖座'},
+  {q:'亨利四世上 vs 暴风雨',opts:['亨利四世上','暴风雨'],a:0,note:'亨利四世在莎翁年代极受欢迎'},
+  {q:'冬天的故事 vs 威尼斯商人',opts:['冬天的故事','威尼斯商人'],a:1,note:'威尼斯商人频繁上演，是票房佳作'},
+  {q:'安东尼与克莉奥佩特拉 vs 奥赛罗',opts:['安东尼与克莉奥佩特拉','奥赛罗'],a:1,note:'奥赛罗在莎翁时代非常卖座'},
+  {q:'理查三世 vs 维洛那二绅士',opts:['理查三世','维洛那二绅士'],a:0,note:'理查三世是莎翁早期最成功的作品'},
+];
+function initBoxoffice(cont){
+  let idx=0,score=0;const items=shuffle([...BOXOFFICE_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="boArea"></div>';
+  const a=document.getElementById('boArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128178; 票房风云完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128178;','票房预言家','熟知莎翁时代票房情况！');else if(score>=7)unlock('&#128178;','票房学徒','你对莎翁作品流行度有了解！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128178; 票房 ${idx+1}/${items.length}</div></div><div style="font-size:.78em;color:var(--gold);text-align:center;padding:4px">${q.q}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin-bottom:6px">当时哪部更受欢迎？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="boFB"></div><div class="mg-score-bar">得分：<span id="boS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('boFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('boS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ '+q.note+'</div>':'<div class="hc-result show bad">❌ '+q.note+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// 10. Anagram ─────────────────────────────
+const ANAGRAM_Q = [
+  {sc:'特雷哈姆',opts:['哈姆雷特','李尔王','麦克白','奥赛罗'],a:0},
+  {sc:'丽叶朱与欧罗密',opts:['罗密欧与朱丽叶','威尼斯商人','暴风雨','驯悍记'],a:0},
+  {sc:'之梦夏日仲夜',opts:['冬天的故事','仲夏夜之梦','第十二夜','皆大欢喜'],a:1},
+  {sc:'商人与尼斯维',opts:['威尼斯商人','奥赛罗','维洛那二绅士','错误的喜剧'],a:0},
+  {sc:'白麦克',opts:['麦克白','李尔王','奥赛罗','哈姆雷特'],a:0},
+  {sc:'风暴雨',opts:['暴风雨','冬天的故事','无事生非','亨利五世'],a:0},
+  {sc:'王李尔',opts:['亨利四世','李尔王','查理三世','约翰王'],a:1},
+  {sc:'夜二第十',opts:['第十二夜','第十二日','十日谈','第十夜'],a:0},
+  {sc:'赛罗奥',opts:['奥赛罗','罗密欧','科利奥兰纳斯','安东尼'],a:0},
+  {sc:'喜皆大欢',opts:['皆大欢喜','无事生非','错误的喜剧','驯悍记'],a:0},
+];
+function initAnagram(cont){
+  let idx=0,score=0;const items=shuffle([...ANAGRAM_Q]);
+  cont.innerHTML='<button class="mg-back" onclick="setupMG()">&#9664; 返回</button><div id="anArea"></div>';
+  const a=document.getElementById('anArea');render();
+  function render(){
+    if(idx>=items.length){
+      a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128270; 字母解密完成！</div><div class="hc-text">得分：${score}/${items.length}</div></div>`;
+      if(score===items.length)unlock('&#128270;','字母解密大师','完美还原所有剧名！');else if(score>=8)unlock('&#128270;','字母侦探','你擅长从字母中辨认剧名！');
+      return;
+    }
+    const q=items[idx],ao=shuffle([...q.opts]),ci=ao.indexOf(q.opts[q.a]);
+    a.innerHTML=`<div class="hc-scene"><div class="hc-title">&#128270; 解密 ${idx+1}/${items.length}</div></div><div style="font-size:1.1em;color:var(--gold);text-align:center;padding:8px;letter-spacing:3px">${q.sc}</div><div style="font-size:.6em;color:var(--text2);text-align:center;margin-bottom:6px">这些字母重组是哪部剧？</div>`+
+      ao.map((o,i)=>`<button class="hc-choice" data-i="${i}">${o}</button>`).join('')+
+      `<div id="anFB"></div><div class="mg-score-bar">得分：<span id="anS">${score}</span></div>`;
+    a.querySelectorAll('.hc-choice').forEach(b=>{b.onclick=()=>{
+      a.querySelectorAll('.hc-choice').forEach(x=>x.disabled=true);
+      const fb=document.getElementById('anFB'),ok=parseInt(b.dataset.i)===ci;
+      if(ok){score++;document.getElementById('anS').textContent=score}
+      fb.innerHTML=ok?'<div class="hc-result show good">✅ 正确！</div>':'<div class="hc-result show bad">❌ 正确答案：'+ao[ci]+'</div>';
+      idx++;setTimeout(render,1200);
+    }});
+  }
+}
+
+// ============================================================
+// WORKS QUIZ
+// ============================================================
+function setupWorksQuiz(){
+  let qi=Math.floor(Math.random()*QUIZ_WORKS.length),answered=false;
+  const q=QUIZ_WORKS[qi];
+  document.getElementById('wqQ').textContent=q.q;
+  const o=document.getElementById('wqOpts');
+  o.innerHTML=q.opts.map((opt,i)=>`<button class="wq-opt" onclick="${answered?'':`(function(){answered=true;document.querySelectorAll('.wq-opt').forEach((b,j)=>{b.disabled=true;if(j===${q.a})b.classList.add('correct');else if(j===${i})b.classList.add('wrong')});const fb=document.getElementById('wqFb');fb.textContent=${i===q.a}?'✅ 正确！':'❌ 正确答案是：'+${q.a};fb.classList.add('show');setTimeout(()=>{setupWorksQuiz()},2000)})()`}">${opt}</button>`).join('');
+  document.getElementById('wqFb').className='wq-fb';
+}
+
+// ============================================================
+// STARFIELD
+// ============================================================
+function setupStars(){
+  const c=document.getElementById('starfield'),cx=c.getContext('2d');
+  let s=[],ms=[],nb=[];let mt=0;
+  function rs(){
+    c.width=innerWidth;c.height=innerHeight;
+    const w=c.width,h=c.height;
+    s=Array.from({length:200},()=>{
+      const t=Math.random();
+      return{
+        x:Math.random()*w,y:Math.random()*h,
+        r:t<.6?.3+.3*Math.random():t<.85?.7+.4*Math.random():1.2+.8*Math.random(),
+        ph:Math.random()*Math.PI*2,
+        sp:Math.random()*.025+.005,
+        tint:t<.8?[255,255,255]:t<.9?[200,220,255]:[255,225,200],
+        ba:.08+Math.random()*.18
+      };
+    });
+    nb=Array.from({length:3},()=>({
+      x:Math.random()*w,y:Math.random()*h,
+      r:80+Math.random()*120,
+      dx:(Math.random()-.5)*.06,
+      dy:(Math.random()-.5)*.06,
+      col:[[232,168,124,12],[168,216,234,10],[212,168,67,8]][Math.floor(Math.random()*3)]
+    }));
+  }
+  function fireMeteor(){
+    if(ms.length>=3)return;
+    const a=Math.random()*.4+.2;
+    ms.push({
+      x:Math.random()*c.width*1.4-c.width*.2,
+      y:Math.random()*c.height*.3,
+      dx:Math.cos(a),dy:Math.sin(a),
+      l:80+Math.random()*80,life:1
+    });
+  }
+  function dr(t){
+    cx.clearRect(0,0,c.width,c.height);
+    const w=c.width,h=c.height;
+    // nebula clouds
+    nb.forEach(n=>{
+      n.x+=n.dx;n.y+=n.dy;
+      if(n.x<-200||n.x>w+200)n.dx*=-1;
+      if(n.y<-200||n.y>h+200)n.dy*=-1;
+      const g=cx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+      g.addColorStop(0,`rgba(${n.col[0]},${n.col[1]},${n.col[2]},.025)`);
+      g.addColorStop(.5,`rgba(${n.col[0]},${n.col[1]},${n.col[2]},.012)`);
+      g.addColorStop(1,`rgba(${n.col[0]},${n.col[1]},${n.col[2]},0)`);
+      cx.fillStyle=g;cx.beginPath();cx.arc(n.x,n.y,n.r,0,Math.PI*2);cx.fill();
+    });
+    // stars
+    s.forEach(st=>{
+      const tw=(Math.sin(st.ph+t*st.sp)+1)*.5;
+      const a=tw*st.ba+st.ba*.3;
+      cx.globalAlpha=Math.min(a,1);
+      cx.fillStyle=`rgb(${st.tint[0]},${st.tint[1]},${st.tint[2]})`;
+      cx.beginPath();cx.arc(st.x,st.y,st.r,0,Math.PI*2);cx.fill();
+      if(st.r>.9){
+        cx.globalAlpha=a*.12;
+        cx.beginPath();cx.arc(st.x,st.y,st.r*2.5,0,Math.PI*2);cx.fill();
+      }
+    });
+    cx.globalAlpha=1;
+    // meteors
+    ms.forEach((m,i)=>{
+      m.x+=m.dx*3;m.y+=m.dy*3;m.life-=.008;
+      if(m.life<=0){ms.splice(i,1);return}
+      const g=cx.createLinearGradient(m.x,m.y,m.x-m.dx*m.l,m.y-m.dy*m.l);
+      g.addColorStop(0,`rgba(255,255,255,${m.life})`);
+      g.addColorStop(1,`rgba(255,255,255,0)`);
+      cx.strokeStyle=g;cx.lineWidth=1.5;cx.beginPath();
+      cx.moveTo(m.x,m.y);cx.lineTo(m.x-m.dx*m.l,m.y-m.dy*m.l);cx.stroke();
+    });
+    requestAnimationFrame(dr);
+  }
+  // meteor spawn loop
+  function ml(){const d=1500+Math.random()*6000;setTimeout(()=>{fireMeteor();ml()},d)}
+  addEventListener('resize',rs);rs();requestAnimationFrame(dr);ml();
+}
+
+function setupFloaties(){
+  const c=document.getElementById('floaties'),
+    syms=['&#9998;','&#128214;','&#127912;','&#127917;','&#127775;','&#10024;','&#128302;','&#127800;','&#127916;','&#128329;'];
+  for(let i=0;i<18;i++){
+    const p=document.createElement('div');p.className='float-p';
+    p.innerHTML=syms[i%syms.length];
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(25+Math.random()*45)+'s';
+    p.style.animationDelay=Math.random()*35+'s';
+    const s2=.2+Math.random()*.6;
+    p.style.fontSize=s2+'em';
+    p.style.opacity=(.015+Math.random()*.045);
+    c.appendChild(p);
+  }
+}
+
+// ============================================================
+// TAB SYSTEM + RIPPLE
+// ============================================================
+// Ripple effect on interactive elements
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('button,.choice-btn,.ts-choice,.hc-choice,.mg-card,.world-card,.w-card,.wd-travel,.quiz-btn');
+  if(!btn||btn.disabled)return;
+  const rect=btn.getBoundingClientRect();
+  const sz=Math.max(rect.width,rect.height);
+  const r=document.createElement('span');r.className='ripple';
+  r.style.width=r.style.height=sz+'px';
+  r.style.left=(e.clientX-rect.left-sz/2)+'px';
+  r.style.top=(e.clientY-rect.top-sz/2)+'px';
+  btn.appendChild(r);
+  setTimeout(()=>r.remove(),600);
+});
+
+// Tab switching with smooth entrance
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>{
+      c.classList.remove('active');
+      c.style.animation='none';
+      void c.offsetHeight; // reflow hack
+    });
+    btn.classList.add('active');
+    const tc=document.getElementById('tab-'+btn.dataset.tab);
+    tc.classList.add('active');
+    tc.style.animation='';
+  });
+});
+
+// ============================================================
+// QUOTES CAROUSEL
+// ============================================================
+function setupQuotes(){
+  let qi=0;
+  const show=()=>{const q=QUOTES[qi];document.getElementById('qtText').textContent=q.text;document.getElementById('qtSource').textContent=q.source};
+  show();document.getElementById('qtPrev').onclick=()=>{qi=(qi-1+QUOTES.length)%QUOTES.length;show()};
+  document.getElementById('qtNext').onclick=()=>{qi=(qi+1)%QUOTES.length;show()};
+}
+
+// ============================================================
+// POLYFILL
+// ============================================================
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){if(r>w/2)r=w/2;if(r>h/2)r=h/2;this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.quadraticCurveTo(x+w,y,x+w,y+r);this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);this.lineTo(x+r,y+h);this.quadraticCurveTo(x,y+h,x,y+h-r);this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);this.closePath();return this}
+}
+
+// ============================================================
+// WORKS DETAIL + TRAVEL
+// ============================================================
+function setupWorksScroll(){
+  document.getElementById('worksScroll').innerHTML=WORKS_DATA.map((w,i)=>`<div class="w-card" onclick="showWorkDetail(${i})">
+    <span class="wb ${w.y}">${{tragedy:'悲剧',comedy:'喜剧',history:'历史剧'}[w.y]||w.y}</span>
+    <div class="wt">${w.t}</div><div class="we">${w.e}</div><div class="wy">&#128197; ${w.yr}</div>
+    <div class="wd">${w.d}</div>
+    <div class="w-enter">&#10132; 查看详情</div></div>`).join('');
+}
+
+function showWorkDetail(idx){
+  const w=WORKS_DATA[idx],d=PLAY_DETAILS[w.t];
+  document.getElementById('worksScroll').style.display='none';
+  const dv=document.getElementById('workDetail');dv.style.display='block';
+  if(!d){dv.innerHTML=`<button class="mg-back" onclick="backToWorks()">&#9664; 返回</button><div class="hc-scene"><div class="hc-title">${w.t}</div><div class="hc-text">${w.d}</div></div>`;return}
+  const tp={tragedy:'悲剧',comedy:'喜剧',history:'历史剧'}[w.y]||'';
+  dv.innerHTML=`<button class="mg-back" onclick="backToWorks()">&#9664; 返回</button>
+    <div class="work-detail"><span class="wb ${w.y}">${tp}</span>
+    <div class="wd-title">${w.t} <span class="wd-en">${w.e} · ${w.yr}</span></div>
+    <div class="wd-chars">${d.chars.map(c=>`<span class="wd-char">${c}</span>`).join('')}</div>
+    <div class="wd-intro">${d.intro}</div>
+    <div class="wd-quote">"${d.q||''}"<span class="wd-qx">${d.qx||''}</span></div>
+    <button class="wd-travel" onclick="travelToPlay(${idx})">&#128640; 穿越到「${w.t}」的世界</button></div>`;
+}
+
+function backToWorks(){
+  document.getElementById('worksScroll').style.display='';
+  document.getElementById('workDetail').style.display='none';
+  document.getElementById('travelArea').style.display='none';
+}
+
+function travelToPlay(idx){
+  const w=WORKS_DATA[idx],d=PLAY_DETAILS[w.t];
+  if(!d)return;
+  document.getElementById('workDetail').style.display='none';
+  const ta=document.getElementById('travelArea');ta.style.display='block';
+  ta.innerHTML=`<button class="mg-back" onclick="backToDetail(${idx})">&#9664; 返回简介</button>
+    <div class="travel-scene"><div class="ts-bg">${d.bg}</div><div class="ts-npc">${d.npc}</div>
+    <div class="ts-line">"${d.line}"</div><div class="ts-divider"></div><div id="travelGame"></div></div>`;
+  const tg=document.getElementById('travelGame');
+  if(d.game.type==='choice')renderTravelChoice(d,tg);
+  else if(d.game.type==='find')renderTravelFind(d,tg);
+  else if(d.game.type==='order')renderTravelOrder(d,tg);
+}
+function backToDetail(idx){showWorkDetail(idx)}
+
+function renderTravelChoice(d,cont){
+  const g=d.game;
+  cont.innerHTML=`<div class="ts-scene">${g.scene}</div>
+    <div class="ts-choices">${g.c.map((_,i)=>`<button class="ts-choice" data-i="${i}">${g.c[i].t}</button>`).join('')}</div>
+    <div id="tsFB"></div>`;
+  cont.querySelectorAll('.ts-choice').forEach(b=>{b.onclick=()=>{
+    if(cont.querySelector('.hc-result'))return;
+    cont.querySelectorAll('.ts-choice').forEach(x=>x.disabled=true);
+    const fb=document.getElementById('tsFB'),ci=parseInt(b.dataset.i);
+    fb.innerHTML=`<div class="hc-result show ${g.c[ci].e}">${g.c[ci].r}</div>`;
+    if(g.c[ci].e!=='bad')unlock('&#127917;','穿越抉择','你在一部莎翁剧中做出了关键选择！');
+    const btn=document.createElement('button');btn.className='mg-back';btn.style.marginTop='8px';btn.textContent='继续探索 →';btn.onclick=()=>renderTravelQuiz(d,cont);fb.appendChild(btn);
+  }});
+}
+
+function renderTravelFind(d,cont){
+  const g=d.game;let found=0,total=g.items.filter(x=>x.ok).length;
+  cont.innerHTML=`<div class="ts-scene">${g.scene}</div>
+    <div class="find-grid">${g.items.map((_,i)=>`<div class="find-item" data-i="${i}">${g.items[i].e}<span>${g.items[i].n}</span></div>`).join('')}</div>
+    <div class="ts-tip">${g.tip||''}</div><div id="tsFB"></div>`;
+  cont.querySelectorAll('.find-item').forEach(el=>{el.onclick=()=>{
+    if(cont.querySelector('.hc-result'))return;
+    if(el.classList.contains('found'))return;
+    const i=parseInt(el.dataset.i);
+    if(g.items[i].ok){el.classList.add('found');el.style.borderColor='#4caf50';el.style.background='rgba(76,175,80,.08)';found++;
+      if(found>=total){const fb=document.getElementById('tsFB');fb.innerHTML='<div class="hc-result show good">✅ 全部找对了！你太了解这部剧了！</div>';unlock('&#127917;','探索达人','成功找出了剧中的所有关键线索！');const btn=document.createElement('button');btn.className='mg-back';btn.style.marginTop='8px';btn.textContent='继续探索 →';btn.onclick=()=>renderTravelQuiz(d,cont);fb.appendChild(btn)}
+    }else{el.style.borderColor='#c76b5a';el.style.background='rgba(199,107,90,.08)';el.onclick=null}
+  }});
+}
+
+function renderTravelOrder(d,cont){
+  const g=d.game,items=shuffle([...g.items]);let next=1;
+  cont.innerHTML=`<div class="ts-scene">${g.scene}</div>
+    <div class="order-tip">${g.tip||''}</div>
+    <div class="order-area">${items.map((_,i)=>`<div class="order-item" data-i="${i}">${items[i].t}</div>`).join('')}</div><div id="tsFB"></div>`;
+  cont.querySelectorAll('.order-item').forEach(el=>{el.onclick=()=>{
+    if(cont.querySelector('.hc-result'))return;
+    if(el.classList.contains('placed'))return;
+    const i=parseInt(el.dataset.i),it=items[i];
+    if(it.ord===next){el.classList.add('placed');el.textContent=it.ord+'. '+it.t;el.style.borderColor='#4caf50';el.style.background='rgba(76,175,80,.08)';next++;
+      if(next>g.items.length){const fb=document.getElementById('tsFB');fb.innerHTML='<div class="hc-result show good">✅ 完全正确！你对剧情了如指掌！</div>';unlock('&#127917;','剧情大师','准确还原了故事的时间顺序！');const btn=document.createElement('button');btn.className='mg-back';btn.style.marginTop='8px';btn.textContent='继续探索 →';btn.onclick=()=>renderTravelQuiz(d,cont);fb.appendChild(btn)}
+    }else{el.style.borderColor='#c76b5a';el.style.background='rgba(199,107,90,.08)';el.onclick=null}
+  }});
+}
+
+function renderTravelQuiz(d,cont){
+  const qs=d.quiz||[];let qi=0,score=0;
+  cont.innerHTML=`<div class="ts-divider"></div><div style="text-align:center;color:var(--accent2);font-size:.82em;margin:4px 0">&#129518; 剧情小测验</div><div id="quizArea"></div>`;
+  const qa=document.getElementById('quizArea');show();
+  function show(){
+    if(qi>=qs.length){
+      qa.innerHTML=`<div class="hc-result show ${score===qs.length?'good':'neutral'}"><strong>📊 答对 ${score}/${qs.length}</strong>${score===qs.length?' 满分！莎翁专家！':score>=2?' 不错哦～':' 再读读剧情吧！'}</div>`;
+      unlock('&#127942;','穿越体验','你完整探索了一部莎翁名剧！');return;
+    }
+    const q=qs[qi];
+    qa.innerHTML=`<div style="font-size:.76em;color:var(--text);margin:6px 0;line-height:1.5">${qi+1}. ${q.s}</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin:4px 0">
+        <button class="quiz-btn" data-v="1">✅ 是</button>
+        <button class="quiz-btn" data-v="0">❌ 否</button></div>
+      <div id="qFB"></div>`;
+    qa.querySelectorAll('.quiz-btn').forEach(b=>{b.onclick=()=>{
+      if(qa.querySelector('.hc-result'))return;
+      qa.querySelectorAll('.quiz-btn').forEach(x=>x.disabled=true);
+      const ok=(b.dataset.v==='1')===q.a;
+      if(ok)score++;
+      document.getElementById('qFB').innerHTML=`<div class="hc-result show ${ok?'good':'bad'}">${ok?'✅ 答对了！':'❌ 正确答案：'+(q.a?'是':'否')}</div>`;
+      qi++;setTimeout(show,1200);
+    }});
+  }
+}
+
+// ============================================================
+// IDLE ANIMATION
+// ============================================================
+setInterval(()=>{
+  blink++;
+  if(blink>100){bState=1}
+  if(blink>106){bState=0;blink=0}
+},30);
+
+// ============================================================
+// INIT
+// ============================================================
+setupWorksScroll();setupQuotes();setupMG();setupStars();setupFloaties();setupWorksQuiz();buildWorld();
+drawChar(0,'happy');
+setSpeech('&#127775; 命运之声','点击角色会有惊喜哦！<br>点击下方按钮，开始书写莎士比亚的传奇人生！');
+setNarr('<span class="hl">&#127775; 1564年 · 斯特拉特福</span><br>一个婴儿在春天的晨光中降生。他就是未来的"吟游诗人"——威廉·莎士比亚。<br>而你手中的笔，将决定他的人生走向……');
+setTimeout(()=>unlock('&#127917;','舞台开幕','欢迎来到莎翁奇妙物语！'),800);
+</script>
+</body>
+</html>
